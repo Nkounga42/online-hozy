@@ -320,11 +320,11 @@ const [form, setForm] = useState<FormType>(() => {
     
     try {
       const url = isEditMode
-        ? `http://localhost:5000/api/forms/${id}`
-        : "http://localhost:5000/api/forms";
+        ? `https://online-hozy.onrender.com/api/forms/${id}`
+        : "https://online-hozy.onrender.com/api/forms";
 //  const url = isEditMode
 //         ? `${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.GET_FORM.replace(":id", id!)}`
-//         : "http://localhost:5000/api/forms";
+//         : "https://online-hozy.onrender.com/api/forms";
       const method = isEditMode ? "PUT" : "POST";
 
       const response = await fetch(url, {
@@ -395,7 +395,7 @@ const [form, setForm] = useState<FormType>(() => {
 
     const fetchForm = async () => {
       try {
-        const response = await fetch(`http://localhost:5000/api/forms/${id}`,{
+        const response = await fetch(`https://online-hozy.onrender.com/api/forms/${id}`,{
           headers: { "Content-Type": "application/json", "Authorization": `Bearer ${Token}` },
         });
         if (!response.ok) {

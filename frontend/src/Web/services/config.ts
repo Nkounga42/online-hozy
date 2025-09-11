@@ -1,6 +1,6 @@
 export const API_CONFIG = {
   // URL de base de votre backend
-  BASE_URL: import.meta.env.VITE_API_URL || 'http://localhost:5000',
+  BASE_URL: import.meta.env.VITE_API_URL || 'https://online-hozy.onrender.com',
   
   // Endpoints de l'API
   ENDPOINTS: {

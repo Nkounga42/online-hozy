@@ -48,7 +48,7 @@ export default function Register() {
     }
 
     try {
-      const response = await fetch("http://localhost:5000/api/users/register", {
+      const response = await fetch("https://online-hozy.onrender.com/api/users/register", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -102,7 +102,7 @@ export default function Register() {
 
       // Messages d'erreur plus spécifiques
       if (err.message.includes('Failed to fetch')) {
-        setError("Impossible de contacter le serveur. Vérifiez que votre backend est démarré sur http://localhost:5000");
+        setError("Impossible de contacter le serveur. Vérifiez que votre backend est démarré sur https://online-hozy.onrender.com");
       } else if (err.message.includes("duplicate key")) {
         setError("Cet email est déjà enregistré. Veuillez vous connecter.");
       } else {

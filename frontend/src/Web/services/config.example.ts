@@ -3,7 +3,7 @@
 
 export const API_CONFIG = {
   // URL de base de votre backend
-  BASE_URL: import.meta.env.VITE_API_URL || 'http://localhost:5000',
+  BASE_URL: import.meta.env.VITE_API_URL || 'https://online-hozy.onrender.com',
   
   // Endpoints de l'API
   ENDPOINTS: {
@@ -62,7 +62,7 @@ INSTRUCTIONS D'INSTALLATION :
    cp config.example.ts config.ts
 
 2. Modifiez l'URL de base dans config.ts selon votre backend :
-   - Développement local : http://localhost:5000
+   - Développement local : https://online-hozy.onrender.com
    - Production : https://api.votre-domaine.com
    - Autre port : http://localhost:3000
 
@@ -71,7 +71,7 @@ INSTRUCTIONS D'INSTALLATION :
    - Si vous utilisez une version : '/v1/users/login'
 
 4. Créez un fichier .env à la racine de votre projet :
-   VITE_API_URL=http://localhost:5000
+   VITE_API_URL=https://online-hozy.onrender.com
 
 5. Redémarrez votre application React après les modifications
 */

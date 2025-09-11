@@ -1,8 +1,13 @@
 import React from 'react';
 import { useUser } from '../../services/userService';
+import authService from '../../services/authService';
 
 const Header: React.FC = () => {
   const { user, loading } = useUser();
+
+  const handleLogout = () => {
+    authService.logout();
+  };
 
   if (loading) {
     return (
@@ -28,13 +33,13 @@ const Header: React.FC = () => {
               {user.displayName?.charAt(0).toUpperCase() || user.email.charAt(0).toUpperCase()}
             </div>
           )}
-          {/* <div className="flex flex-col">
+          <div className="flex flex-col">
             <span className="font-semibold">{user.displayName || user.email}</span>
             <span className="text-sm text-gray-500">{user.role}</span>
           </div>
-          <button className="btn btn-sm btn-error" onClick={logout}>
+          <button className="btn btn-sm btn-error" onClick={handleLogout}>
             Déconnexion
-          </button> */}
+          </button>
         </div>
       ) : (
         <div className="text-gray-500">Utilisateur non connecté</div>

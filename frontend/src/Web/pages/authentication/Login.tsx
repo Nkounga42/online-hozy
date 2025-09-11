@@ -1,10 +1,9 @@
-import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import React, { useState, useEffect } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
 import Footer from "../../components/ui/Footer";
 import { useUser } from "../../services/userService"; // <-- importer le contexte
 import { toast } from "sonner";
-
-
+import authService from "../../services/authService";
 
 const Login = () => {
   const { login } = useUser(); 
@@ -15,6 +14,15 @@ const Login = () => {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const navigate = useNavigate();
+  const location = useLocation();
+
+  // Rediriger si déjà connecté
+  useEffect(() => {
+    if (authService.isAuthenticated()) {
+      const from = (location.state as { from?: { pathname: string } })?.from?.pathname || "/";
+      navigate(from, { replace: true });
+    }
+  }, [navigate, location]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -23,19 +31,25 @@ const Login = () => {
     setLoading(true);
 
     try {
+      // Utiliser le service d'authentification directement
+      await authService.login(email, password);
+      
+      // Aussi mettre à jour le contexte utilisateur
       await login(email, password, rememberMe);
 
       setSuccess("Connexion réussie 🎉");
       toast("Connexion réussie 🎉");
-      console.log("✅ Utilisateur connecté via le contexte");
 
+      // Rediriger vers la page d'origine ou la page d'accueil
+      const from = (location.state as { from?: { pathname: string } })?.from?.pathname || "/";
       setTimeout(() => {
-        navigate("/");
+        navigate(from, { replace: true });
       }, 500);
       
-    } catch (err: any) {
-      setError(err.message || "Erreur de connexion");
-      toast.error(err.message || "Erreur de connexion");
+    } catch (err: unknown) {
+      const error = err as { message?: string };
+      setError(error.message || "Erreur de connexion");
+      toast.error(error.message || "Erreur de connexion");
     } finally {
       setLoading(false);
     } 
@@ -44,7 +58,7 @@ const Login = () => {
 
   const handleSocialLogin = (provider: string) => {
     toast(`Connexion avec ${provider}`);
-    window.location.href = `http://localhost:5000/auth/${provider.toLowerCase()}`;
+    window.location.href = `https://online-hozy.onrender.com/auth/${provider.toLowerCase()}`;
   };
 
   return (
