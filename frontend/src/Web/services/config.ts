@@ -1,0 +1,59 @@
+export const API_CONFIG = {
+  // URL de base de votre backend
+  BASE_URL: import.meta.env.VITE_API_URL || 'http://localhost:5000',
+  
+  // Endpoints de l'API
+  ENDPOINTS: {
+
+    LOGIN: '/api/users/login',
+    REGISTER: '/api/users/register',
+    LOGOUT: '/api/users/logout',
+    
+    GET_CURRENT_USER: '/api/users/me',
+    UPDATE_PROFILE: '/api/users/profile',
+    UPDATE_PREFERENCES: '/api/users/preferences',
+
+    GET_USERS: '/api/users',
+    DELETE_USER: '/api/users',
+
+    GET_FORMS: '/api/forms', 
+    GET_FORM: '/api/forms/:id',
+    // SUBMIT_FORM: '/api/forms/submit',
+  },
+  
+  // Configuration des requêtes
+  REQUEST_CONFIG: {
+    TIMEOUT: 10000, 
+    RETRY_ATTEMPTS: 3,
+    RETRY_DELAY: 1000, 
+  },
+  
+  // Configuration des tokens
+  TOKEN_CONFIG: {
+    STORAGE_KEYS: {
+      AUTH_TOKEN: 'authToken',
+      USER_DATA: 'user_data',
+    },
+    HEADER_NAME: 'Authorization',
+    HEADER_PREFIX: 'Bearer',
+  },
+} as const;
+
+
+export const buildApiUrl = (endpoint: string): string => {
+  return `${API_CONFIG.BASE_URL}${endpoint}`;
+};
+
+
+export const getBaseUrl = (): string => {
+  return API_CONFIG.BASE_URL;
+};
+
+
+export const getEndpoint = (key: keyof typeof API_CONFIG.ENDPOINTS): string => {
+  return API_CONFIG.ENDPOINTS[key];
+};
+
+
+export const Token = localStorage.getItem(API_CONFIG.TOKEN_CONFIG.STORAGE_KEYS.AUTH_TOKEN) ||
+              sessionStorage.getItem(API_CONFIG.TOKEN_CONFIG.STORAGE_KEYS.AUTH_TOKEN);

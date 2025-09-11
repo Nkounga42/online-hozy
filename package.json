@@ -1,0 +1,17 @@
+{
+  "name": "hozy-form",
+  "version": "1.0.0",
+  "description": "",  
+  "license": "ISC",
+  "author": "",
+  "scripts": {
+    "server": "cd backend && npm start",
+    "client": "cd frontend && npm run dev-react",
+    "studio": "concurrently \"npm run server\" \"npm run client\"",
+    "build": "cd frontend && npm run build",
+    "dev": "npm run studio"
+  },
+  "dependencies": {
+    "concurrently": "^9.2.1"
+  }
+}
