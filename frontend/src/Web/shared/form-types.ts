@@ -50,7 +50,7 @@ export type Form = {
 export interface FormResponse {
   id: string;
   formId: string;
-  responses: Record<string, any>;
+  responses: Record<string, string | number | boolean | string[]>;
   submittedAt: Date;
 }
 
@@ -127,6 +127,8 @@ export interface BuilderHeaderProps {
   redoStack: React.MutableRefObject<Form[]>;
   undo: () => void;
   redo: () => void;
+  canUndo: boolean;
+  canRedo: boolean;
   showNavigator: boolean;
   setShowNavigator: (show: boolean) => void;
   showFieldTypeSelector: boolean;

@@ -1,4 +1,4 @@
-import { useRef, useState, useEffect } from "react";
+import { useRef, useState, useEffect, useCallback } from "react";
 import type {
   Form as FormType,
   FormField,
@@ -73,25 +73,131 @@ export function FormBuilder() {
 const template = searchParams.get("template") || "blank template";
   const initialTitle = searchParams.get("title") || "Nouveau formulaire";
 
+const getTemplateFields = (templateType: string): FormField[] => {
+  switch (templateType) {
+    case "quiz":
+      return [
+        {
+          id: `field-${Date.now()}-1`,
+          type: "radio",
+          label: "Quelle est la capitale de la France ?",
+          required: true,
+          options: ["Paris", "Lyon", "Marseille", "Toulouse"]
+        },
+        {
+          id: `field-${Date.now()}-2`,
+          type: "radio",
+          label: "Combien font 2 + 2 ?",
+          required: true,
+          options: ["3", "4", "5", "6"]
+        },
+        {
+          id: `field-${Date.now()}-3`,
+          type: "text",
+          label: "Votre nom complet",
+          required: true
+        }
+      ];
+    
+    case "survey":
+      return [
+        {
+          id: `field-${Date.now()}-1`,
+          type: "select",
+          label: "Comment évaluez-vous notre service ?",
+          required: true,
+          options: ["Excellent", "Très bien", "Bien", "Moyen", "Mauvais"]
+        },
+        {
+          id: `field-${Date.now()}-2`,
+          type: "radio",
+          label: "Recommanderiez-vous notre service ?",
+          required: true,
+          options: ["Oui, certainement", "Probablement", "Peut-être", "Probablement pas", "Non, jamais"]
+        },
+        {
+          id: `field-${Date.now()}-3`,
+          type: "textarea",
+          label: "Commentaires supplémentaires",
+          required: false
+        }
+      ];
+    
+    case "registration":
+      return [
+        {
+          id: `field-${Date.now()}-1`,
+          type: "text",
+          label: "Nom complet",
+          required: true
+        },
+        {
+          id: `field-${Date.now()}-2`,
+          type: "email",
+          label: "Adresse email",
+          required: true
+        },
+        {
+          id: `field-${Date.now()}-3`,
+          type: "text",
+          label: "Numéro de téléphone",
+          required: true
+        },
+        {
+          id: `field-${Date.now()}-4`,
+          type: "select",
+          label: "Type de participation",
+          required: true,
+          options: ["Participant", "Accompagnateur", "VIP", "Presse"]
+        },
+        {
+          id: `field-${Date.now()}-5`,
+          type: "checkbox",
+          label: "Options supplémentaires",
+          required: false,
+          options: ["Repas végétarien", "Accès PMR", "Newsletter", "Certificat de participation"]
+        }
+      ];
+    
+    default:
+      return [];
+  }
+};
+
+const getTemplateDescription = (templateType: string): string => {
+  switch (templateType) {
+    case "quiz":
+      return "Quiz interactif pour évaluer les connaissances";
+    case "survey":
+      return "Sondage pour collecter des avis et opinions";
+    case "registration":
+      return "Formulaire d'inscription à un événement";
+    default:
+      return "Formulaire personnalisé";
+  }
+};
+
 const [form, setForm] = useState<FormType>(() => {
+    const templateFields = getTemplateFields(template);
+    
     return {
       theme: "default",
       groupId: 0,
       title: initialTitle,
-      description: template,
+      description: getTemplateDescription(template),
       pages: [
         {
           id: `page-${Date.now()}`,
           order: 1,
           title: "Page 1",
-          fields: [],
+          fields: templateFields,
         },
       ],
       settings: {
-        pageNavigation: false,
-        showProgressBar: false,
-        collectEmails: true,
-        allowMultipleResponses: false,
+        pageNavigation: true,
+        showProgressBar: template === "quiz",
+        collectEmails: template !== "quiz",
+        allowMultipleResponses: template === "survey",
       },
     };
   });
@@ -104,26 +210,56 @@ const [form, setForm] = useState<FormType>(() => {
 
   const setFormWithHistory = (updater: (prev: FormType) => FormType) => {
     setForm((prevForm) => {
+      // Sauvegarder l'état actuel dans l'historique avant la modification
+      undoStack.current.push(JSON.parse(JSON.stringify(prevForm)));
+      
+      // Limiter la taille de l'historique à 50 actions
+      if (undoStack.current.length > 50) {
+        undoStack.current.shift();
+      }
+      
+      // Vider la pile redo car on fait une nouvelle action
+      redoStack.current = [];
+      
       const updatedForm = updater(prevForm);
       return updatedForm;
     });
   };
 
-  const undo = () => {
+  const undo = useCallback(() => {
     if (undoStack.current.length > 0) {
       const previous = undoStack.current.pop()!;
-      redoStack.current.push(form);
+      redoStack.current.push(JSON.parse(JSON.stringify(form)));
       setForm(previous);
+      toast.success("Action annulée");
     }
-  };
+  }, [form]);
 
-  const redo = () => {
+  const redo = useCallback(() => {
     if (redoStack.current.length > 0) {
       const next = redoStack.current.pop()!;
-      undoStack.current.push(form);
+      undoStack.current.push(JSON.parse(JSON.stringify(form)));
       setForm(next);
+      toast.success("Action rétablie");
     }
-  };
+  }, [form]);
+
+  // Raccourcis clavier pour undo/redo
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if ((event.ctrlKey || event.metaKey) && event.key === 'z' && !event.shiftKey) {
+        event.preventDefault();
+        undo();
+      } else if ((event.ctrlKey || event.metaKey) && (event.key === 'y' || (event.key === 'z' && event.shiftKey))) {
+        event.preventDefault();
+        redo();
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [undo, redo]);
+
 
   const [activeTab, setActiveTab] = useState<
     "edit" | "preview" | "settings" | "reponse" 
@@ -441,6 +577,8 @@ const [form, setForm] = useState<FormType>(() => {
         undo={undo}
         redoStack={redoStack}
         redo={redo}
+        canUndo={undoStack.current.length > 0}
+        canRedo={redoStack.current.length > 0}
         onSave={handleSave}
         showNavigator={showNavigator}
         setShowNavigator={setShowNavigator}
@@ -526,7 +664,7 @@ const [form, setForm] = useState<FormType>(() => {
             </>
           )}
 
-          {activeTab === "preview" && <div className="relative"><FormPreview form={form} /></div>}
+          {activeTab === "preview" && <div className="relative"><FormPreview form={form} onSubmit={toast("Formulaire soumis")}/></div>}
 
           {activeTab === "settings" && (
             <BuilderSettings

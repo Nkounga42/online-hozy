@@ -14,6 +14,7 @@ import Terms from "./pages/legal/Terms";
 import About from "./pages/info/About";
 import Privacy from "./pages/legal/Privacy";
 import Contact from "./pages/info/Contact";
+import Profile from "./pages/Profile";
 
 function App() {
   return (
@@ -81,6 +82,14 @@ function App() {
         <Route path="/about" element={<About />} />
         <Route path="/privacy" element={<Privacy />} />{" "}
         <Route path="/contact" element={<Contact />} />{" "}
+        <Route
+          path="/profile"
+          element={
+            <ProtectedRoute>
+              <Profile />
+            </ProtectedRoute>
+          }
+        />
       </Routes>
     </BrowserRouter>
   );

@@ -27,8 +27,8 @@ export default function ProtectedRoute({ children }: ProtectedRouteProps) {
   // Afficher un loader pendant la vérification
   if (isAuthenticated === null) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-gray-900"></div>
+      <div className="flex items-center justify-center min-h-screen gap-3">
+        <span className="loading loading-spinner loading-lg"></span> Chargement...
       </div>
     );
   }

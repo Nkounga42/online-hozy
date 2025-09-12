@@ -5,9 +5,9 @@ import {
   PanelLeftClose,
   PanelRight,
   PanelRightClose,
-  // Redo2,
+  Redo2,
   Settings,
-  // Undo2,
+  Undo2,
   FileText,
   Share2,
   CornerDownLeft,
@@ -31,9 +31,11 @@ const Builderheader = ({
   undoStack,
   setForm,
   form,
-  // undo,
+  undo,
   redoStack,
-  // redo,
+  redo,
+  canUndo,
+  canRedo,
   showNavigator,
   setShowNavigator,
   showFieldTypeSelector,
@@ -77,7 +79,7 @@ const Builderheader = ({
             
           </div>
 <div className="flex items-center justify-center">
-              <div className="dropdown hidden">
+              <div className="dropdown  ">
                 <div tabIndex={0} role="button" className="btn btn-ghost m-1">
                   Édition
                 </div>
@@ -222,6 +224,27 @@ const Builderheader = ({
                 >
                   <Settings className="w-4 h-4 " />  
                 </div>
+              </div>
+
+              {/* Boutons Undo/Redo */}
+              <div className="join ml-2">
+                <button
+                  className={`btn btn-sm btn-ghost join-item tooltip tooltip-bottom ${!canUndo ? 'btn-disabled' : ''}`}
+                  onClick={undo}
+                  disabled={!canUndo}
+                  data-tip="Annuler (Ctrl+Z)"
+                >
+                  <Undo2 className="w-4 h-4" />
+                </button>
+
+                <button
+                  className={`btn btn-sm btn-ghost join-item tooltip tooltip-bottom ${!canRedo ? 'btn-disabled' : ''}`}
+                  onClick={redo}
+                  disabled={!canRedo}
+                  data-tip="Rétablir (Ctrl+Y)"
+                >
+                  <Redo2 className="w-4 h-4" />
+                </button>
               </div> 
               {/* <button
                 className="btn btn-sm btn-ghost join-item"
