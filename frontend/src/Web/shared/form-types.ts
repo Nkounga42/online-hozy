@@ -39,10 +39,20 @@ export type Form = {
     fields: FormField[];
   }>;
   settings: {
+    // Valeurs par défaut - Paramètres par défaut des formulaires
     collectEmails: boolean;
     allowMultipleResponses: boolean;
     showProgressBar: boolean;
     pageNavigation: boolean;
+    
+    // Paramètres par défaut des questions
+    makeQuestionsRequiredByDefault: boolean;
+    
+    // Réponses - Gérez la façon dont les réponses sont collectées et protégées
+    sendResponseCopyToParticipants: boolean;
+    allowResponseEditing: boolean;
+    requireLogin: boolean;
+    limitToOneResponse: boolean;
   };
 };
 
@@ -133,6 +143,7 @@ export interface BuilderHeaderProps {
   setShowNavigator: (show: boolean) => void;
   showFieldTypeSelector: boolean;
   setShowFieldTypeSelector: (show: boolean) => void;
+  hasUnsavedChanges?: boolean;
 }
 
 

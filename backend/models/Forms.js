@@ -15,10 +15,20 @@ const PageSchema = new mongoose.Schema({
 });
 
 const SettingsSchema = new mongoose.Schema({
+  // Valeurs par défaut - Paramètres par défaut des formulaires
   collectEmails: { type: Boolean, default: false },
   allowMultipleResponses: { type: Boolean, default: false },
   showProgressBar: { type: Boolean, default: false },
   pageNavigation: { type: Boolean, default: true },
+  
+  // Paramètres par défaut des questions
+  makeQuestionsRequiredByDefault: { type: Boolean, default: false },
+  
+  // Réponses - Gérez la façon dont les réponses sont collectées et protégées
+  sendResponseCopyToParticipants: { type: Boolean, default: false },
+  allowResponseEditing: { type: Boolean, default: false },
+  requireLogin: { type: Boolean, default: false },
+  limitToOneResponse: { type: Boolean, default: false },
 });
 
 const FormSchema = new mongoose.Schema({

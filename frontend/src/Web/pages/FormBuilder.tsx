@@ -7,10 +7,11 @@ import type {
 } from "../shared/form-types";
 import { FormPreview } from "../components/form-builder/FormPreview";
 import { useDrop } from "react-dnd";
-import { useParams, useSearchParams } from "react-router-dom";
+import { useParams, useSearchParams, useNavigate } from "react-router-dom";
 import Builderheader from "../components/ui/builderheader";
 import BuilderEdit from "../components/ui/builderEdit";
 import BuilderSettings from "../components/ui/builder";
+import ExitConfirmModal from "../components/ui/ExitConfirmModal";
 import { v4 as uuidv4 } from "uuid";
 import { useUser } from '../services/userService';
 import { toast } from 'sonner'
@@ -21,12 +22,16 @@ import { getFieldTypeLabel, needsOptions } from "../lib/utils";
 export function FormBuilder() {
   const { user } = useUser();
   const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
   const [ activePageIndex, setActivePageIndex] = useState(0);
   const [ showFormDetails, setShowFormDetails] = useState(false);
   const [ loading, setLoading] = useState(true);
   const [ error, setError] = useState("");
   const [ showNavigator, setShowNavigator] = useState(true);
   const [ showFieldTypeSelector, setShowFieldTypeSelector] = useState(true);
+  const [ showExitModal, setShowExitModal] = useState(false);
+  const [ hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  const [ pendingNavigation, setPendingNavigation] = useState<string | null>(null);
    
 
   const [, drop] = useDrop(() => ({
@@ -198,6 +203,11 @@ const [form, setForm] = useState<FormType>(() => {
         showProgressBar: template === "quiz",
         collectEmails: template !== "quiz",
         allowMultipleResponses: template === "survey",
+        makeQuestionsRequiredByDefault: false,
+        sendResponseCopyToParticipants: false,
+        allowResponseEditing: false,
+        requireLogin: false,
+        limitToOneResponse: false,
       },
     };
   });
@@ -221,9 +231,48 @@ const [form, setForm] = useState<FormType>(() => {
       // Vider la pile redo car on fait une nouvelle action
       redoStack.current = [];
       
+      // Marquer comme ayant des changements non sauvegardés
+      setHasUnsavedChanges(true);
+      
       const updatedForm = updater(prevForm);
       return updatedForm;
     });
+  };
+
+  // Fonction pour gérer la navigation avec confirmation
+  const handleNavigation = (path: string) => {
+    if (hasUnsavedChanges) {
+      setPendingNavigation(path);
+      setShowExitModal(true);
+    } else {
+      navigate(path);
+    }
+  };
+
+  // Fonction pour confirmer la sortie sans sauvegarder
+  const handleConfirmExit = () => {
+    setShowExitModal(false);
+    if (pendingNavigation) {
+      navigate(pendingNavigation);
+    }
+    setPendingNavigation(null);
+  };
+
+  // Fonction pour sauvegarder et sortir
+  const handleSaveAndExit = async () => {
+    await handleSave();
+    setHasUnsavedChanges(false);
+    setShowExitModal(false);
+    if (pendingNavigation) {
+      navigate(pendingNavigation);
+    }
+    setPendingNavigation(null);
+  };
+
+  // Fonction pour fermer le modal
+  const handleCloseModal = () => {
+    setShowExitModal(false);
+    setPendingNavigation(null);
   };
 
   const undo = useCallback(() => {
@@ -478,6 +527,9 @@ const [form, setForm] = useState<FormType>(() => {
       const savedForm = await response.json();
       console.log("✅ Form sauvegardé :", savedForm);
       toast.success(isEditMode ? "Formulaire mis à jour" : "Formulaire créé");
+      
+      // Marquer comme sauvegardé
+      setHasUnsavedChanges(false);
 
     } catch (err) {
       console.error("❌=>", err);
@@ -584,6 +636,8 @@ const [form, setForm] = useState<FormType>(() => {
         setShowNavigator={setShowNavigator}
         showFieldTypeSelector={showFieldTypeSelector}
         setShowFieldTypeSelector={setShowFieldTypeSelector}
+        onNavigate={handleNavigation}
+        hasUnsavedChanges={hasUnsavedChanges}
       />   
       <div className="" >
 
@@ -667,9 +721,10 @@ const [form, setForm] = useState<FormType>(() => {
           {activeTab === "preview" && <div className="relative"><FormPreview form={form} onSubmit={toast("Formulaire soumis")}/></div>}
 
           {activeTab === "settings" && (
-            <BuilderSettings
-              updateFormDetails={updateFormDetails}
-              form={form}
+            <BuilderSettings 
+              form={form} 
+              updateFormDetails={updateFormDetails} 
+              hasUnsavedChanges={hasUnsavedChanges}
             />
           )}
 
@@ -680,6 +735,15 @@ const [form, setForm] = useState<FormType>(() => {
           )}
         </div>
       </div>  
+      
+      {/* Modal de confirmation de sortie */}
+      <ExitConfirmModal
+        isOpen={showExitModal}
+        onClose={handleCloseModal}
+        onConfirm={handleConfirmExit}
+        onSave={handleSaveAndExit}
+        hasUnsavedChanges={hasUnsavedChanges}
+      />
     </div>
   );
 

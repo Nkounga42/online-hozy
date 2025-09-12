@@ -1,4 +1,4 @@
-import Index from "./pages/Index";
+import Index from "./pages/project";
 import Login from "./pages/authentication/Login";
 import NotFound from "./pages/NotFound";
 import Register from "./pages/authentication/Register";

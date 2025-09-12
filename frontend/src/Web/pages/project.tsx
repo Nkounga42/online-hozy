@@ -161,11 +161,36 @@ const handleShareForm = async (formId: number) => {
 
     const data = await res.json();
     console.log(data)
-    navigator.clipboard.writeText(data.shareUrl);
-    toast.success("URL de partage copiée dans le presse-papiers");
-  } catch (err) {
+    
+    // Vérifier si l'API Clipboard est disponible
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      await navigator.clipboard.writeText(data.shareUrl);
+      toast.success("URL de partage copiée dans le presse-papiers");
+    } else {
+      // Fallback pour les navigateurs qui ne supportent pas l'API Clipboard
+      const textArea = document.createElement('textarea');
+      textArea.value = data.shareUrl;
+      textArea.style.position = 'fixed';
+      textArea.style.left = '-999999px';
+      textArea.style.top = '-999999px';
+      document.body.appendChild(textArea);
+      textArea.focus();
+      textArea.select();
+      
+      try {
+        document.execCommand('copy');
+        toast.success("URL de partage copiée dans le presse-papiers");
+      } catch (fallbackErr) {
+        console.error('Fallback copy failed:', fallbackErr);
+        toast.error("Impossible de copier l'URL. Voici le lien : " + data.shareUrl);
+      } finally {
+        document.body.removeChild(textArea);
+      }
+    }
+  } catch (err: unknown) {
     console.error(err);
-    toast.error("Erreur lors du partage du formulaire : " + err.message);
+    const errorMessage = err instanceof Error ? err.message : "Erreur inconnue";
+    toast.error("Erreur lors du partage du formulaire : " + errorMessage);
   }
 };
 
@@ -537,51 +562,88 @@ const handleShareForm = async (formId: number) => {
                   </div>
               </div>
             ) : (
-              <div className="md:flex-wrap md:flex lg:grid grid-cols-5 gap-4 min-h-[55vh] md:min-h-[50vh]">
               <>
-                {displayMode !== "groups" &&
-                  ungrouped
-                    .filter((f) => f.groupId === 0)
-                    .map((form) => (
-                      <FormCard
-                        key={form.id}
-                        form={form}
-                        isChildren={false}
-                        onRename={(newTitle) =>
-                          handleRenameForm(form.id, newTitle)
-                        }
-                        onDelete={() => handleDeleteForm(form.id)}
-                        onDuplicate={() => handleDuplicateForm(form.id)}
-                        onExport={() => handleExportForm(form.id)}
-                        onShare={() => handleShareForm(form.id)}
-                        href={`/form/builder/edit/${form.id}`}
-                      />
-                    ))}
+                {/* Vérifier s'il n'y a aucun projet */}
+                {allForms.length === 0 && groups.length === 0 ? (
+                  <div className="flex-1 flex flex-col justify-center items-center md:min-h-[50vh] w-full h-full text-center">
+                    <div className="max-w-md mx-auto">
+                      <div className="mb-6">
+                        <svg 
+                          className="w-24 h-24 mx-auto text-base-content/30 mb-4" 
+                          fill="none" 
+                          stroke="currentColor" 
+                          viewBox="0 0 24 24"
+                        >
+                          <path 
+                            strokeLinecap="round" 
+                            strokeLinejoin="round" 
+                            strokeWidth={1.5} 
+                            d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" 
+                          />
+                        </svg>
+                      </div>
+                      <h3 className="text-xl font-semibold text-base-content mb-2">
+                        Aucun projet trouvé
+                      </h3>
+                      <p className="text-base-content/70 mb-6">
+                        Vous n'avez pas encore créé de formulaires. Commencez par créer votre premier projet !
+                      </p>
+                      <button
+                        className="btn btn-primary"
+                        onClick={() => setCreateProject(true)}
+                      >
+                        Créer mon premier formulaire
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="md:flex-wrap md:flex lg:grid grid-cols-5 gap-4 min-h-[55vh] md:min-h-[50vh]">
+                    <>
+                      {displayMode !== "groups" &&
+                        ungrouped
+                          .filter((f) => f.groupId === 0)
+                          .map((form) => (
+                            <FormCard
+                              key={form.id}
+                              form={form}
+                              isChildren={false}
+                              onRename={(newTitle) =>
+                                handleRenameForm(form.id, newTitle)
+                              }
+                              onDelete={() => handleDeleteForm(form.id)}
+                              onDuplicate={() => handleDuplicateForm(form.id)}
+                              onExport={() => handleExportForm(form.id)}
+                              onShare={() => handleShareForm(form.id)}
+                              href={`/form/builder/edit/${form.id}`}
+                            />
+                          ))}
 
-                {displayMode !== "ungrouped" &&
-                  groupsWithForms
-                    .filter((g) => g && g.id != null && g.forms.length > 0)
-                    .map((group) => (
-                      <FolderCard
-                        key={group.id}
-                        selectedFolder={() => setSelectedGroup(group)}
-                        title={group.title}
-                        description={group.description}
-                        formList={group.forms}
-                        formCount={group.forms.length}
-                        onDelete={() => handleDeleteGroup(group.id)}
-                        onRename={(newTitle) =>
-                          handleRenameGroup(group.id, newTitle)
-                        }
-                        onDuplicate={() => handleDuplicateGroup(group.id)}
-                        onExport={() => handleExportGroup(group.id)}
-                        onShare={() => handleShareGroup(group.id)}
-                      />
-                    ))}
+                      {displayMode !== "ungrouped" &&
+                        groupsWithForms
+                          .filter((g) => g && g.id != null && g.forms.length > 0)
+                          .map((group) => (
+                            <FolderCard
+                              key={group.id}
+                              selectedFolder={() => setSelectedGroup(group)}
+                              title={group.title}
+                              description={group.description}
+                              formList={group.forms}
+                              formCount={group.forms.length}
+                              onDelete={() => handleDeleteGroup(group.id)}
+                              onRename={(newTitle) =>
+                                handleRenameGroup(group.id, newTitle)
+                              }
+                              onDuplicate={() => handleDuplicateGroup(group.id)}
+                              onExport={() => handleExportGroup(group.id)}
+                              onShare={() => handleShareGroup(group.id)}
+                            />
+                          ))}
 
-                {/* Formulaires sans groupe (groupId = 0) */}
+                      {/* Formulaires sans groupe (groupId = 0) */}
+                    </>
+                  </div>
+                )}
               </>
-          </div>
             )}
 
           { totalPages > 1 && (<div className="flex justify-center mt-6 space-x-2">

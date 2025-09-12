@@ -1,5 +1,90 @@
 import React, { useState } from "react"; 
 import type { Form, FormField } from "../../shared/form-types"; // Assure-toi d'importer tes types correctement
+import { FileText, Image, Video, Music, File, X } from "lucide-react";
+
+// Composant pour l'aperçu des fichiers
+const FilePreview = ({ file }: { file: File }) => {
+  const fileType = file.type;
+  const fileName = file.name.toLowerCase();
+  
+  // Images
+  if (fileType.startsWith('image/')) {
+    const imageUrl = URL.createObjectURL(file);
+    return (
+      <div className="relative w-full h-20 bg-base-200 rounded overflow-hidden">
+        <img 
+          src={imageUrl} 
+          alt={file.name}
+          className="w-full h-full object-cover"
+          onLoad={() => URL.revokeObjectURL(imageUrl)}
+        />
+        <div className="absolute top-1 right-1 bg-black/50 rounded p-1">
+          <Image className="w-3 h-3 text-white" />
+        </div>
+      </div>
+    );
+  }
+  
+  // Vidéos
+  if (fileType.startsWith('video/')) {
+    const videoUrl = URL.createObjectURL(file);
+    return (
+      <div className="relative w-full h-20 bg-base-200 rounded overflow-hidden">
+        <video 
+          src={videoUrl} 
+          className="w-full h-full object-cover"
+          onLoadedData={() => URL.revokeObjectURL(videoUrl)}
+        />
+        <div className="absolute inset-0 flex items-center justify-center bg-black/30">
+          <Video className="w-8 h-8 text-white" />
+        </div>
+      </div>
+    );
+  }
+  
+  // Audio
+  if (fileType.startsWith('audio/')) {
+    return (
+      <div className="w-full h-20 bg-base-200 rounded flex items-center justify-center">
+        <Music className="w-8 h-8 text-base-content/60" />
+      </div>
+    );
+  }
+  
+  // PDF
+  if (fileType === 'application/pdf' || fileName.endsWith('.pdf')) {
+    return (
+      <div className="w-full h-20 bg-red-100 rounded flex items-center justify-center">
+        <FileText className="w-8 h-8 text-red-600" />
+      </div>
+    );
+  }
+  
+  // Documents texte
+  if (fileType.startsWith('text/') || fileName.endsWith('.txt') || fileName.endsWith('.doc') || fileName.endsWith('.docx')) {
+    return (
+      <div className="w-full h-20 bg-blue-100 rounded flex items-center justify-center">
+        <FileText className="w-8 h-8 text-blue-600" />
+      </div>
+    );
+  }
+  
+  // JSON
+  if (fileType === 'application/json' || fileName.endsWith('.json')) {
+    return (
+      <div className="w-full h-20 bg-green-100 rounded flex items-center justify-center">
+        <FileText className="w-8 h-8 text-green-600" />
+      </div>
+    );
+  }
+  
+  // Fichier générique
+  return (
+    <div className="w-full h-20 bg-base-200 rounded flex items-center justify-center">
+      <File className="w-8 h-8 text-base-content/60" />
+    </div>
+  );
+};
 
 export function FormPreview({
   form,
@@ -116,15 +201,56 @@ export function FormPreview({
       }
 
 
-      case "file":
+      case "file": {
+        const files = value as FileList | null;
+        const fileArray = files ? Array.from(files) : [];
+        
+        const removeFile = (indexToRemove: number) => {
+          const newFileArray = fileArray.filter((_, index) => index !== indexToRemove);
+          
+          // Créer un nouveau FileList à partir du tableau filtré
+          const dataTransfer = new DataTransfer();
+          newFileArray.forEach(file => dataTransfer.items.add(file));
+          
+          updateResponse(fieldId, dataTransfer.files);
+        };
+        
         return (
-          <input
-            type="file"
-            className="file-input file-input-bordered w-full"
-            onChange={(e) => updateResponse(fieldId, e.target.files)}
-            required={field.required}
-          />
+          <div className="space-y-3">
+            <input
+              type="file"
+              className="file-input file-input-bordered w-full"
+              onChange={(e) => updateResponse(fieldId, e.target.files)}
+              required={field.required}
+              multiple
+              accept="image/*,video/*,audio/*,.pdf,.doc,.docx,.txt,.json"
+            />
+            
+            {/* Aperçu des fichiers sélectionnés */}
+            {fileArray.length > 0 && (
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 mt-4">
+                {fileArray.map((file, index) => (
+                  <div key={index} className="relative border border-base-300 rounded-lg p-3 bg-base-100 group">
+                    <button
+                      type="button"
+                      onClick={() => removeFile(index)}
+                      className="absolute -top-2 -right-2 btn btn-circle btn-xs btn-error opacity-0 group-hover:opacity-100 transition-opacity z-10"
+                      title="Supprimer ce fichier"
+                    >
+                      <X className="w-3 h-3" />
+                    </button>
+                    <FilePreview file={file} />
+                    <div className="mt-2 text-xs text-base-content/70">
+                      <div className="truncate font-medium">{file.name}</div>
+                      <div>{(file.size / 1024).toFixed(1)} KB</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
         );
+      }
 
       default:
         return null;

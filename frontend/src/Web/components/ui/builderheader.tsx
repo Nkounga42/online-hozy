@@ -18,13 +18,13 @@ import {
   ArrowLeft,
 } from "lucide-react";
 import { Link } from "react-router-dom";
+import { useState } from "react";
 import type { BuilderHeaderProps } from "../../shared/form-types";
 import UserProfile from "./UserProfile";
 import LoginButton from "./LoginButton";
 
 const Builderheader = ({
   onSave,
-  // updateFormDetails,
   activeTab,
   setActiveTab,
   setActivePageIndex,
@@ -40,7 +40,10 @@ const Builderheader = ({
   setShowNavigator,
   showFieldTypeSelector,
   setShowFieldTypeSelector,
-}: BuilderHeaderProps) => {
+  onNavigate,
+  hasUnsavedChanges = false,
+}: BuilderHeaderProps & { onNavigate?: (path: string) => void }) => {
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const handleExport = () => {
     const dataStr = JSON.stringify(form, null, 2);
     const blob = new Blob([dataStr], {
@@ -54,94 +57,146 @@ const Builderheader = ({
     URL.revokeObjectURL(url);
   };
   return (
-    <header className="border-b border-base-100 bg-base-200">
+    <header className="border-b border-base-300 bg-base-200">
       <div className="mx-auto px-4  ">
         <div className="flex items-center justify-between gap-2">
           <div className="flex items-center gap-5">
             <div className="flex items-center justify-start gap-4 group min-w-[180px] ">
-              <Link
-                className="text-2xl hover:text-primary group-hover:hidden"
-                to={"/"}
+              <div
+                className="text-2xl hover:text-primary group-hover:hidden cursor-pointer"
+                onClick={() => onNavigate ? onNavigate("/") : window.location.href = "/"}
               >
                 Form Builder
-              </Link>
+              </div>
               
-              <Link
-                className="text-2xl   text-primary hidden group-hover:block"
-                to={"/"}
+              <div
+                className="text-2xl   text-primary hidden group-hover:block cursor-pointer"
+                onClick={() => onNavigate ? onNavigate("/") : window.location.href = "/"}
               ><div className="flex justify-center items-center gap-2.5 w-full">
                 <ArrowLeft />
                 <span>Home</span>
               </div>
-              </Link>
+              </div>
             </div>
 
             
-          </div>
-<div className="flex items-center justify-center">
-              <div className="dropdown  ">
-                <div tabIndex={0} role="button" className="btn btn-ghost m-1">
+          </div>{/*isDropdownOpen ? 'dropdown-open' : '' */ }
+<div className="flex items-center justify-center relative">
+              <div className={`dropdown`}>
+                <div 
+                  role="button" 
+                  className="btn btn-ghost m-1"
+                  onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                   onBlur={() => setTimeout(() => setIsDropdownOpen(false), 150)}
+                >
                   Édition
-                </div>
-                <ul className="dropdown-content menu bg-base-100/30 backdrop-blur-2xl rounded-box z-10 w-52 p-2 shadow-sm border border-base-300/70">
-                  <li onClick={() => setActiveTab("edit")}>
-                    <a>
+                </div> 
+              </div>
+                {isDropdownOpen && <ul className="dropdown-content menu absolute top-10 -left-1/2 translate-x-1/2 bg-base-100/30 backdrop-blur-2xl rounded-box z-10 w-52 p-2 shadow-sm border border-base-300/70">
+                  <li>
+                    <a onClick={(e) => {
+                      e.preventDefault();
+                      setActiveTab("edit");
+                      setIsDropdownOpen(false);
+                    }}>
                       <Edit className="inline mr-2" size={16} />
                       Modifier
                     </a>
                   </li>
 
-                  <li onClick={() => setActiveTab("preview")}>
-                    <a>
+                  <li>
+                    <a onClick={(e) => {
+                      e.preventDefault();
+                      setActiveTab("preview");
+                      setIsDropdownOpen(false);
+                    }}>
                       <Eye className="inline mr-2" size={16} />
                       Aperçu
                     </a>
                   </li>
 
-                  <li onClick={() => setActiveTab("settings")}>
-                    <a>
+                  <li>
+                    <a onClick={(e) => {
+                      e.preventDefault();
+                      setActiveTab("settings");
+                      setIsDropdownOpen(false);
+                    }}>
                       <Settings className="inline mr-2" size={16} />
                       Paramètres
                     </a>
                   </li>
 
-                  <li onClick={() => setActiveTab("reponse")}>
-                    <a>
+                  <li>
+                    <a onClick={(e) => {
+                      e.preventDefault();
+                      setActiveTab("reponse");
+                      setIsDropdownOpen(false);
+                    }}>
                       <FileText className="inline mr-2" size={16} />
                       Réponses
                     </a>
                   </li>
 
                   <li>
-                    <Link to={`/form/preview/${form.id}`} target="_blank">
-                      <Share2 className="inline mr-2" size={16} />
-                      Partager
-                    </Link>
+                    {hasUnsavedChanges ? (
+                      <a className="text-gray-400 cursor-not-allowed tooltip tooltip-right" data-tip="Sauvegardez d'abord" onClick={(e) => {
+                        e.preventDefault();
+                        alert("Veuillez sauvegarder le formulaire avant de le partager.");
+                      }}>
+                        <Share2 className="inline mr-2" size={16} />
+                        Partager 
+                      </a>
+                    ) : (
+                      <Link to={`/form/preview/${form.id}`} target="_blank" onClick={() => setIsDropdownOpen(false)}>
+                        <Share2 className="inline mr-2" size={16} />
+                        Partager
+                      </Link>
+                    )}
                   </li>
 
-                  <li onClick={() => console.log("Annuler")}>
-                    <a>
+                  <li>
+                    <a className={!canUndo ? 'text-gray-400 cursor-not-allowed' : ''} onClick={(e) => {
+                      e.preventDefault();
+                      if (canUndo) {
+                        undo();
+                        setIsDropdownOpen(false);
+                      }
+                    }}>
                       <CornerDownLeft className="inline mr-2" size={16} />
                       Annuler
                     </a>
                   </li>
 
-                  <li onClick={() => console.log("Rétablir")}>
-                    <a>
+                  <li>
+                    <a className={!canRedo ? 'text-gray-400 cursor-not-allowed' : ''} onClick={(e) => {
+                      e.preventDefault();
+                      if (canRedo) {
+                        redo();
+                        setIsDropdownOpen(false);
+                      }
+                    }}>
                       <CornerDownRight className="inline mr-2" size={16} />
                       Rétablir
                     </a>
                   </li>
 
-                  <li onClick={onSave}>
-                    <a>
+                  <li>
+                    <a onClick={(e) => {
+                      e.preventDefault();
+                      onSave();
+                      setIsDropdownOpen(false);
+                    }}>
                       <Save className="inline mr-2" size={16} />
                       Enregistrer
                     </a>
                   </li>
 
-                  <li onClick={handleExport}>
-                    <a>
+                  <li>
+                    <a onClick={(e) => {
+                      e.preventDefault();
+                      handleExport();
+                      setIsDropdownOpen(false);
+                    }}>
                       <Download className="inline mr-2" size={16} />
                       Exporter
                     </a>
@@ -171,6 +226,7 @@ const Builderheader = ({
                               undoStack.current = [];
                               redoStack.current = [];
                               setActivePageIndex(0);
+                              setIsDropdownOpen(false);
                               alert("Formulaire importé avec succès !");
                             } else {
                               alert("Le fichier JSON n'est pas valide.");
@@ -182,14 +238,12 @@ const Builderheader = ({
                         reader.readAsText(file);
                       }}
                     />
-                    <label htmlFor="form-import" className="cursor-pointer">
+                    <label htmlFor="form-import" className="cursor-pointer flex items-center">
                       <Upload className="inline mr-2" size={16} />
                       Importer
                     </label>
                   </li>
-                </ul>
-              </div>
-
+                </ul>}
               <div role="tablist " className="join ">
                 <div
                   role="tab"

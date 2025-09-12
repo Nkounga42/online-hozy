@@ -41,6 +41,8 @@ export function CreateProject({ callBack }: { callBack?: () => void }) {
   const navigate = useNavigate();
 
   const handleCreate = () => {
+    if (!title.trim()) return;
+    
     // Idéalement : créer dans la base de données ici
     console.log("Création du projet :", { title, selectedTemplate });
 
@@ -50,6 +52,13 @@ export function CreateProject({ callBack }: { callBack?: () => void }) {
         title
       )}`
     );
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      handleCreate();
+    }
   };
 
   return (
@@ -69,6 +78,7 @@ export function CreateProject({ callBack }: { callBack?: () => void }) {
             className="input input-bordered w-full"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
+            onKeyDown={handleKeyDown}
           />
         </div>
 

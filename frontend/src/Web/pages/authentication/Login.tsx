@@ -142,16 +142,16 @@ const Login = () => {
             </form>
 
             <p className="text-center mt-4 text-sm">
-              Pas encore de compte ?
-              <a href="/register" className="link link-primary">
+              Pas encore de compte ? 
+              <a href="/register" className="ml-2 link link-primary">
                 S'inscrire
               </a>
             </p>
           </div>
           {/* Divider */}
-          <div className="divider">ou</div>
+          <div className="divider hidden">ou</div>
           {/* Connexion sociale */}
-          <div className="space-y-3 mb-6">
+          <div className="space-y-3 mb-6 hidden">
             <button
               onClick={() => handleSocialLogin("Google")}
               className="btn btn-ghost btn-error w-full flex items-center justify-center gap-3"

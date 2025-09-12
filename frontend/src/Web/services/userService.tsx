@@ -7,7 +7,7 @@ export interface AppUser {
   id: string;
   email: string;
   displayName: string | null;
-  photoURL: string | null;
+  photoURL: string | null | "https://i.pinimg.com/1200x/57/c2/47/57c2478055a7806f2bb54ce93d4db47a.jpg";
   role: 'admin' | 'editor' | 'viewer';
   createdAt: string;
   lastLogin: string;
@@ -26,7 +26,9 @@ interface UserContextType {
   login: (email: string, password: string, rememberMe?: boolean) => Promise<void>;
   register: (email: string, password: string, displayName: string) => Promise<void>;
   logout: () => Promise<void>;
-  updateUserProfile: (data: Partial<Pick<AppUser, 'displayName' | 'photoURL'>>) => Promise<void>;
+  updateUserProfile: (data: Partial<Pick<AppUser, 'displayName' | 'photoURL'> & { phone?: string; email?: string }>) => Promise<void>;
+  changePassword: (currentPassword: string, newPassword: string) => Promise<void>;
+  deleteAccount: () => Promise<void>;
   updateUserPreferences: (preferences: Partial<AppUser['preferences']>) => Promise<void>;
 }
 
@@ -291,6 +293,8 @@ const checkAuthStatus = async () => {
         method: 'PUT',
         body: JSON.stringify({
           name: data.displayName,
+          email: user.email,
+          phone: (data as any).phone,
           avatar: data.photoURL,
         }),
       });
@@ -308,6 +312,49 @@ const checkAuthStatus = async () => {
     }
   };
 
+  // Changer le mot de passe
+  const changePassword = async (currentPassword: string, newPassword: string) => {
+    try {
+      setLoading(true);
+      
+      await apiCall(getEndpoint('CHANGE_PASSWORD'), {
+        method: 'PUT',
+        body: JSON.stringify({
+          currentPassword,
+          newPassword,
+        }),
+      });
+      
+    } catch (error) {
+      console.error('Erreur de changement de mot de passe:', error);
+      throw error;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Supprimer le compte
+  const deleteAccount = async () => {
+    try {
+      setLoading(true);
+      
+      await apiCall(getEndpoint('DELETE_ACCOUNT'), {
+        method: 'DELETE',
+      });
+      
+      // Déconnecter l'utilisateur après suppression
+      setUser(null);
+      clearAuthToken();
+      localStorage.removeItem(API_CONFIG.TOKEN_CONFIG.STORAGE_KEYS.USER_DATA);
+      
+    } catch (error) {
+      console.error('Erreur de suppression du compte:', error);
+      throw error;
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // Mettre à jour les préférences utilisateur
   const updateUserPreferences = async (preferences: Partial<AppUser['preferences']>) => {
     if (!user) return;
@@ -318,7 +365,7 @@ const checkAuthStatus = async () => {
       // Appel à l'API pour mettre à jour les préférences
       await apiCall(getEndpoint('UPDATE_PREFERENCES'), {
         method: 'PUT',
-        body: JSON.stringify({ preferences }),
+        body: JSON.stringify(preferences),
       });
       
       // Mettre à jour l'état local
@@ -350,6 +397,8 @@ const checkAuthStatus = async () => {
     register,
     logout,
     updateUserProfile,
+    changePassword,
+    deleteAccount,
     updateUserPreferences,
   };
 

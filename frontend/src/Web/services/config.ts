@@ -12,6 +12,8 @@ export const API_CONFIG = {
     GET_CURRENT_USER: '/api/users/me',
     UPDATE_PROFILE: '/api/users/profile',
     UPDATE_PREFERENCES: '/api/users/preferences',
+    CHANGE_PASSWORD: '/api/users/change-password',
+    DELETE_ACCOUNT: '/api/users/delete',
 
     GET_USERS: '/api/users',
     DELETE_USER: '/api/users',
