@@ -17,6 +17,7 @@ import {
 import profileService from '../services/profileService';
 import themeService from '../services/themeService';
 import ThemeSelector from '../components/ui/ThemeSelector';
+import Header from '../components/ui/Header';
 
 interface UserSettings {
   emailNotifications: boolean;
@@ -155,6 +156,7 @@ const Profile: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-base-100">
+    <Header backurl="/" backtext="Retour"/>
       <div className="container mx-auto px-4 py-8">
         <div className="max-w-4xl mx-auto">
           {/* Header */}

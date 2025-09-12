@@ -1,10 +1,11 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { User } from 'lucide-react';
+import { ArrowLeft, User } from 'lucide-react';
 import { useUser } from '../../services/userService';
 import authService from '../../services/authService';
+import APP_LOGO from '../../assets/image/hozy-logo.png';
 
-const Header: React.FC = () => {
+const Header: React.FC = ({ backurl, backtext }: { backurl: string, backtext: string }) => {
   const { user, loading } = useUser();
 
   const handleLogout = () => {
@@ -20,12 +21,19 @@ const Header: React.FC = () => {
   // }
 
   return (
-    <header className=" border-b border-base-content/10  p-2 flex justify-between items-center shadow-md">
-      <div className="text-xl font-bold text-primary">Hozy Form</div>
+    <header className=" border-b border-base-content/10  p-2 flex justify-between items-center ">
+      <Link to={backurl} className="text-xl font-bold group">
+        <span className='group-hover:hidden flex items-center gap-2'>
+          <img src={APP_LOGO} alt="hozy-logo" className='w-8 h-8' />
+          {/* Hozy form */}
+        </span>
+        <span className='group-hover:block hidden '>
+          <span className='flex items-center gap-2'> <ArrowLeft /> {backtext}</span>
+        </span>
+
+      </Link>
       {user ? (
-        <Link  to="/profile" className="flex items-center gap-4">
-
-
+        <Link to="/profile" className="flex items-center gap-4">
           {user.photoURL ? (
             <div className="avatar">
               <div className="w-10 rounded-full">
