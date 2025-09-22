@@ -138,8 +138,8 @@ const Builderheader = ({
                   </li>
 
                   <li>
-                    {hasUnsavedChanges ? (
-                      <a className="text-gray-400 cursor-not-allowed tooltip tooltip-right" data-tip="Sauvegardez d'abord" onClick={(e) => {
+                    {hasUnsavedChanges || !form.id ? (
+                      <a className="text-gray-400 cursor-not-allowed tooltip tooltip-right" data-tip={!form.id ? "Sauvegardez d'abord pour obtenir un ID" : "Sauvegardez d'abord"} onClick={(e) => {
                         e.preventDefault();
                         alert("Veuillez sauvegarder le formulaire avant de le partager.");
                       }}>

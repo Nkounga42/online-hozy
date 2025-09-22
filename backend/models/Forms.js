@@ -55,6 +55,7 @@ const FormSchema = new mongoose.Schema({
       userId: { type: String, default: null },
       answers: mongoose.Schema.Types.Mixed,
       timestamp: { type: Date, default: Date.now },
+      ip: { type: String, default: null },
     },
   ],
 });

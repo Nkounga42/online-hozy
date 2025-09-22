@@ -218,16 +218,22 @@ const responseSettings: { key: keyof typeof settings; label: string; desc: strin
                 </div>
                 <div className="flex gap-2">
                   <input
-                    value={`${window.location.origin}/form/${form.id}/view`}
+                    value={form.id ? `${window.location.origin}/form/${form.id}/view` : "Sauvegardez d'abord pour obtenir l'URL de partage"}
                     readOnly
                     className="input input-bordered flex-1"
+                    placeholder={!form.id ? "Sauvegardez d'abord pour obtenir l'URL" : ""}
                   />
                   <button
-                    className={`btn ${hasUnsavedChanges ? 'btn-disabled' : 'btn-primary'}`}
-                    disabled={hasUnsavedChanges}
+                    className={`btn ${hasUnsavedChanges || !form.id ? 'btn-disabled' : 'btn-primary'}`}
+                    disabled={hasUnsavedChanges || !form.id}
                     onClick={async () => {
                       if (hasUnsavedChanges) {
                         toast.error("Veuillez sauvegarder le formulaire avant de copier le lien de partage.");
+                        return;
+                      }
+                      
+                      if (!form.id) {
+                        toast.error("Aucun ID de formulaire disponible. Sauvegardez d'abord le formulaire.");
                         return;
                       }
                       

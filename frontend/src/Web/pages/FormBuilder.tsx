@@ -431,6 +431,13 @@ const [form, setForm] = useState<FormType>({
       console.log("✅ Form sauvegardé :", savedForm);
       toast.success(isEditMode ? "Formulaire mis à jour" : "Formulaire créé");
       
+      // Mettre à jour l'état du formulaire avec les données du serveur (notamment l'ID)
+      setForm(prevForm => ({
+        ...prevForm,
+        ...savedForm,
+        id: savedForm.id || savedForm._id // Support pour différents formats d'ID
+      }));
+      
       // Marquer comme sauvegardé
       setHasUnsavedChanges(false);
 

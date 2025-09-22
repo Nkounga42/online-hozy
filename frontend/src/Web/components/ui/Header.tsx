@@ -15,7 +15,8 @@ const Header: React.FC<HeaderProps> = ({ backurl, backtext }) => {
 
   
   return (
-    <header className="sticky top-0 z-50 backdrop-blur-xl bg-base-100/30 border-b border-base-content/10  p-2 flex justify-between items-center ">
+    <header className="sticky top-0 z-50 backdrop-blur-xl bg-base-100/30 border-b border-base-content/10 p-1 fl ex justify-center items-center ">
+     <div className="mx-auto flex justify-between items-center max-w-4xl  rounded-xl py-1   px-10 mx-10"> 
       <Link to={backurl || "/"} className="text-xl font-bold group w-50">
         <span className={'flex items-center gap-2 group-hover:'  + (backurl === '/' ? 'hidden' : '')}>
           <img src={APP_LOGO} alt="hozy-logo" className='w-7 h-7' />
@@ -52,6 +53,7 @@ const Header: React.FC<HeaderProps> = ({ backurl, backtext }) => {
       ) : (
         <div className="text-gray-500">Utilisateur non connecté</div>
       )}
+      </div>
     </header>
   );
 };

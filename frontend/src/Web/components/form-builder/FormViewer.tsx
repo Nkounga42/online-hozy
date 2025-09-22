@@ -1,11 +1,11 @@
 // src/pages/FormViewer.tsx
 import { useParams } from "react-router-dom";
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState } from "react";
 import type { Form } from "../../shared/form-types";
 import { FormPreview } from "./index";
 import Footer from "../ui/Footer";
 
-import { API_CONFIG } from '../../services/config';
+import { API_CONFIG, getAuthToken } from '../../services/config';
 import { toast } from "sonner";
 
 export function FormViewer() {
@@ -14,11 +14,6 @@ export function FormViewer() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null); 
 
-  // Fonction pour obtenir le token d'authentification
-  const getAuthToken = (): string | null => {
-    return localStorage.getItem(API_CONFIG.TOKEN_CONFIG.STORAGE_KEYS.AUTH_TOKEN) || sessionStorage.getItem(API_CONFIG.TOKEN_CONFIG.STORAGE_KEYS.AUTH_TOKEN);
-  };
-
   //  Détecte la vue publique
   const isPublicView = window.location.pathname.endsWith("/view");
 
@@ -26,16 +21,8 @@ export function FormViewer() {
   ? `${API_CONFIG.BASE_URL}/api/forms/${id}/view`
   : `${API_CONFIG.BASE_URL}/api/forms/${id}`;
 
-  const getHeaders = useCallback((): HeadersInit => {
-    const headers: HeadersInit = { "Content-Type": "application/json" };
-    if (!isPublicView) {
-      const token = getAuthToken();
-      if (token) {
-        headers["Authorization"] = `Bearer ${token}`;
-      }
-    }
-    return headers;
-  }, [isPublicView]);
+  const headers: HeadersInit = { "Content-Type": "application/json" };
+  if (!isPublicView) headers["Authorization"] = `Bearer ${getAuthToken()}`;
 
   // console.log(isPublicView, apiEndpoint )
 
@@ -44,7 +31,6 @@ export function FormViewer() {
     if (!id) return;
     const fetchForm = async () => {
       try {
-        const headers = getHeaders();
         const res = await fetch(apiEndpoint, { method: "GET" , headers });
         if (!res.ok) throw new Error(`Erreur serveur: ${res.status}`);
 
@@ -66,28 +52,39 @@ export function FormViewer() {
     };
 
     fetchForm();
-  }, [id, apiEndpoint, getHeaders]);
+  }, [id]);
 
   //  Callback pour les réponses
-  const handleSubmit = async (answers: Record<string, string | number | boolean | string[]>) => {
-  const token = getAuthToken();
-  const headers: HeadersInit = {
-    "Content-Type": "application/json",
+  const handleSubmit = async (answers: any) => {
+    try {
+      const headers: HeadersInit = {
+        "Content-Type": "application/json",
+      };
+      
+      // Ajouter le token seulement s'il existe
+      const token = getAuthToken();
+      if (token) {
+        headers["Authorization"] = `Bearer ${token}`;
+      }
+
+      const res = await fetch(`${API_CONFIG.BASE_URL}/api/forms/${id}/submit`, {
+        method: "POST",
+        headers,
+        body: JSON.stringify({ answers }),
+      });
+
+      if (!res.ok) {
+        throw new Error(`Erreur serveur: ${res.status}`);
+      }
+
+      const data = await res.json();
+      console.log("Réponse envoyée :", data);
+      toast.success('Réponse envoyée avec succès !');
+    } catch (error) {
+      console.error("Erreur lors de l'envoi:", error);
+      toast.error('Erreur lors de l\'envoi de la réponse');
+    }
   };
-  if (token) {
-    headers.Authorization = `Bearer ${token}`;
-  }
-
-  const res = await fetch(`${API_CONFIG.BASE_URL}/api/forms/${id}/submit`, {
-    method: "POST",
-    headers,
-    body: JSON.stringify({ answers }),
-  });
-
-  const data = await res.json();
-  console.log("Réponse envoyée :", data);
-  toast.success('Réponse envoyée')
-};
 
   if (error) {
     window.location.href = `/form-not-found/${error}`;

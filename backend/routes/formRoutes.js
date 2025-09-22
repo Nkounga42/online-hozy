@@ -187,24 +187,46 @@ router.post("/", authMiddleware, async (req, res) => {
   }
 });
 
-// POST submit form
-router.post("/:id/submit", authMiddleware, async (req, res) => {
+// POST submit form (route publique)
+router.post("/:id/submit", async (req, res) => {
   try {
-    const userId = req.user.id;
     const formId = req.params.id;
     const { answers } = req.body;
+    
+    // Vérifier si l'utilisateur est authentifié (optionnel)
+    let userId = null;
+    const authHeader = req.headers.authorization;
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      try {
+        const token = authHeader.substring(7);
+        const jwt = await import('jsonwebtoken');
+        const decoded = jwt.default.verify(token, process.env.JWT_SECRET);
+        userId = decoded.id;
+      } catch (err) {
+        // Token invalide, on continue avec userId = null
+        console.log('Token invalide pour la soumission:', err.message);
+      }
+    }
 
+    // Trouver le formulaire (pas besoin que ce soit le créateur)
+    const form = await Form.findOne({ id: formId });
+    if (!form) return res.status(404).json({ message: "Formulaire non trouvé" });
+
+    // Ajouter la soumission
     const updatedForm = await Form.findOneAndUpdate(
-      { id: formId, createById: userId },
+      { id: formId },
       {
         $push: {
-          submissions: { userId, answers, timestamp: new Date() },
+          submissions: { 
+            userId, 
+            answers, 
+            timestamp: new Date(),
+            ip: req.ip // Ajouter l'IP pour tracer les soumissions anonymes
+          },
         },
       },
       { new: true }
     );
-
-    if (!updatedForm) return res.status(404).json({ message: "Formulaire non trouvé" });
 
     res.json({ message: "Réponse enregistrée", form: updatedForm });
   } catch (err) {
