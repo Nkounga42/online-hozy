@@ -13,10 +13,9 @@ import {
   Shield,
   Trash2,
   Upload,
-  BarChart3,
   FileText,
   Users,
-  TrendingUp
+  LogOut
 } from 'lucide-react';
 import themeService from '../services/themeService';
 import ThemeSelector from '../components/ui/ThemeSelector';
@@ -51,7 +50,7 @@ interface UserStats {
 }
 
 const Profile = () => {
-  const { user, updateUserProfile, changePassword, deleteAccount, updateUserPreferences } = useUser();
+  const { user, updateUserProfile, changePassword, deleteAccount, updateUserPreferences, logout } = useUser();
   const [activeTab, setActiveTab] = useState<'profile' | 'settings' | 'security'>('profile');
   const [loading, setLoading] = useState(false);
   const [showCurrentPassword, setShowCurrentPassword] = useState(false);
@@ -200,6 +199,23 @@ const Profile = () => {
       toast.success('Compte supprimé avec succès');
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'Erreur lors de la suppression du compte');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleLogout = async () => {
+    if (!confirm('Êtes-vous sûr de vouloir vous déconnecter ?')) {
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      await logout();
+      toast.success('Déconnexion réussie');
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Erreur lors de la déconnexion');
     } finally {
       setLoading(false);
     }
@@ -509,6 +525,34 @@ const Profile = () => {
                       </button>
                     </div>
                   </form>
+                </div>
+              </div>
+
+              {/* Logout Section */}
+              <div className="mt-10 bg-base-300 border border-base-content/10 rounded-lg">
+                <div className="p-4">
+                  <div className="mb-6">
+                    <div>
+                      <h3 className="font-bold flex items-center gap-2">
+                        <LogOut className="w-5 h-5" />
+                        Déconnexion
+                      </h3>
+                      <div className="text-sm text-base-content/70 mt-1">
+                        Vous déconnecter de votre session actuelle
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex justify-end">
+                    <button 
+                      onClick={handleLogout}
+                      className={`btn btn-outline ${loading ? 'loading' : ''}`}
+                      disabled={loading}
+                    >
+                      <LogOut className="w-4 h-4 mr-2" />
+                      Se déconnecter
+                    </button>
+                  </div>
                 </div>
               </div>
 

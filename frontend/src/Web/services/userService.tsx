@@ -270,12 +270,20 @@ const checkAuthStatus = async () => {
       setUser(null);
       clearAuthToken();
       localStorage.removeItem(API_CONFIG.TOKEN_CONFIG.STORAGE_KEYS.USER_DATA);
+      sessionStorage.removeItem(API_CONFIG.TOKEN_CONFIG.STORAGE_KEYS.USER_DATA);
+      
+      // Rediriger vers la page de login
+      window.location.href = '/login';
     } catch (error) {
       console.error('Erreur de déconnexion:', error);
       // Forcer la déconnexion même en cas d'erreur
       setUser(null);
       clearAuthToken();
       localStorage.removeItem(API_CONFIG.TOKEN_CONFIG.STORAGE_KEYS.USER_DATA);
+      sessionStorage.removeItem(API_CONFIG.TOKEN_CONFIG.STORAGE_KEYS.USER_DATA);
+      
+      // Rediriger vers la page de login même en cas d'erreur
+      window.location.href = '/login';
     } finally {
       setLoading(false);
     }

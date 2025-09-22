@@ -5,7 +5,8 @@
   "type": "module",
   "main": "./src/electron/main",
   "scripts": { 
-    "dev-react": "vite",
+    "dev": "vite",
+    "dev-host": "npx vite --host=0.0.0.0",
     "dev-electron": "concurrently \"npm run dev-react\" \"wait-on http://localhost:5173 && npx electron .\"",
     "build": "tsc -b && vite build",
     "lint": "eslint .",

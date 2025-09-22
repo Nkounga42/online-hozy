@@ -1,11 +1,11 @@
 // src/pages/FormViewer.tsx
 import { useParams } from "react-router-dom";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import type { Form } from "../../shared/form-types";
 import { FormPreview } from "./index";
 import Footer from "../ui/Footer";
 
-import { API_CONFIG, Token } from '../../services/config';
+import { API_CONFIG } from '../../services/config';
 import { toast } from "sonner";
 
 export function FormViewer() {
@@ -14,6 +14,11 @@ export function FormViewer() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null); 
 
+  // Fonction pour obtenir le token d'authentification
+  const getAuthToken = (): string | null => {
+    return localStorage.getItem(API_CONFIG.TOKEN_CONFIG.STORAGE_KEYS.AUTH_TOKEN) || sessionStorage.getItem(API_CONFIG.TOKEN_CONFIG.STORAGE_KEYS.AUTH_TOKEN);
+  };
+
   //  Détecte la vue publique
   const isPublicView = window.location.pathname.endsWith("/view");
 
@@ -21,8 +26,16 @@ export function FormViewer() {
   ? `${API_CONFIG.BASE_URL}/api/forms/${id}/view`
   : `${API_CONFIG.BASE_URL}/api/forms/${id}`;
 
-  const headers: HeadersInit = { "Content-Type": "application/json" };
-  if (!isPublicView) headers["Authorization"] = `Bearer ${Token}`;
+  const getHeaders = useCallback((): HeadersInit => {
+    const headers: HeadersInit = { "Content-Type": "application/json" };
+    if (!isPublicView) {
+      const token = getAuthToken();
+      if (token) {
+        headers["Authorization"] = `Bearer ${token}`;
+      }
+    }
+    return headers;
+  }, [isPublicView]);
 
   // console.log(isPublicView, apiEndpoint )
 
@@ -31,6 +44,7 @@ export function FormViewer() {
     if (!id) return;
     const fetchForm = async () => {
       try {
+        const headers = getHeaders();
         const res = await fetch(apiEndpoint, { method: "GET" , headers });
         if (!res.ok) throw new Error(`Erreur serveur: ${res.status}`);
 
@@ -52,16 +66,21 @@ export function FormViewer() {
     };
 
     fetchForm();
-  }, [id]);
+  }, [id, apiEndpoint, getHeaders]);
 
   //  Callback pour les réponses
-  const handleSubmit = async (answers: any) => {
+  const handleSubmit = async (answers: Record<string, string | number | boolean | string[]>) => {
+  const token = getAuthToken();
+  const headers: HeadersInit = {
+    "Content-Type": "application/json",
+  };
+  if (token) {
+    headers.Authorization = `Bearer ${token}`;
+  }
+
   const res = await fetch(`${API_CONFIG.BASE_URL}/api/forms/${id}/submit`, {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${Token}`, 
-    },
+    headers,
     body: JSON.stringify({ answers }),
   });
 

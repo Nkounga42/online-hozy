@@ -2,6 +2,9 @@
 import {useState  , useEffect } from 'react';
 import type { User } from '../../models/DataModels';
 
+// Type pour les valeurs de réponse
+type AnswerValue = string | number | boolean | string[];
+
 
 
 

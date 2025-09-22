@@ -15,7 +15,7 @@ import ExitConfirmModal from "../components/ui/ExitConfirmModal";
 import { v4 as uuidv4 } from "uuid";
 import { useUser } from '../services/userService';
 import { toast } from 'sonner'
-import { API_CONFIG, Token } from "../services/config";
+import { API_CONFIG } from "../services/config";
 import FormAnswers from "../components/form-builder/FormAnswer";
 import { getFieldTypeLabel, needsOptions } from "../lib/utils";
 
@@ -74,143 +74,40 @@ export function FormBuilder() {
  
   const [searchParams] = useSearchParams();  
 
-  const isEditMode = Boolean(id);     
-const template = searchParams.get("template") || "blank template";
-  const initialTitle = searchParams.get("title") || "Nouveau formulaire";
+  const isEditMode = Boolean(id);
 
-const getTemplateFields = (templateType: string): FormField[] => {
-  switch (templateType) {
-    case "quiz":
-      return [
-        {
-          id: `field-${Date.now()}-1`,
-          type: "radio",
-          label: "Quelle est la capitale de la France ?",
-          required: true,
-          options: ["Paris", "Lyon", "Marseille", "Toulouse"]
-        },
-        {
-          id: `field-${Date.now()}-2`,
-          type: "radio",
-          label: "Combien font 2 + 2 ?",
-          required: true,
-          options: ["3", "4", "5", "6"]
-        },
-        {
-          id: `field-${Date.now()}-3`,
-          type: "text",
-          label: "Votre nom complet",
-          required: true
-        }
-      ];
-    
-    case "survey":
-      return [
-        {
-          id: `field-${Date.now()}-1`,
-          type: "select",
-          label: "Comment évaluez-vous notre service ?",
-          required: true,
-          options: ["Excellent", "Très bien", "Bien", "Moyen", "Mauvais"]
-        },
-        {
-          id: `field-${Date.now()}-2`,
-          type: "radio",
-          label: "Recommanderiez-vous notre service ?",
-          required: true,
-          options: ["Oui, certainement", "Probablement", "Peut-être", "Probablement pas", "Non, jamais"]
-        },
-        {
-          id: `field-${Date.now()}-3`,
-          type: "textarea",
-          label: "Commentaires supplémentaires",
-          required: false
-        }
-      ];
-    
-    case "registration":
-      return [
-        {
-          id: `field-${Date.now()}-1`,
-          type: "text",
-          label: "Nom complet",
-          required: true
-        },
-        {
-          id: `field-${Date.now()}-2`,
-          type: "email",
-          label: "Adresse email",
-          required: true
-        },
-        {
-          id: `field-${Date.now()}-3`,
-          type: "text",
-          label: "Numéro de téléphone",
-          required: true
-        },
-        {
-          id: `field-${Date.now()}-4`,
-          type: "select",
-          label: "Type de participation",
-          required: true,
-          options: ["Participant", "Accompagnateur", "VIP", "Presse"]
-        },
-        {
-          id: `field-${Date.now()}-5`,
-          type: "checkbox",
-          label: "Options supplémentaires",
-          required: false,
-          options: ["Repas végétarien", "Accès PMR", "Newsletter", "Certificat de participation"]
-        }
-      ];
-    
-    default:
-      return [];
-  }
+const getAuthToken = (): string | null => {
+  return localStorage.getItem(API_CONFIG.TOKEN_CONFIG.STORAGE_KEYS.AUTH_TOKEN) || sessionStorage.getItem(API_CONFIG.TOKEN_CONFIG.STORAGE_KEYS.AUTH_TOKEN);
 };
 
-const getTemplateDescription = (templateType: string): string => {
-  switch (templateType) {
-    case "quiz":
-      return "Quiz interactif pour évaluer les connaissances";
-    case "survey":
-      return "Sondage pour collecter des avis et opinions";
-    case "registration":
-      return "Formulaire d'inscription à un événement";
-    default:
-      return "Formulaire personnalisé";
-  }
-};
-
-const [form, setForm] = useState<FormType>(() => {
-    const templateFields = getTemplateFields(template);
-    
-    return {
-      theme: "default",
-      groupId: 0,
-      title: initialTitle,
-      description: getTemplateDescription(template),
-      pages: [
-        {
-          id: `page-${Date.now()}`,
-          order: 1,
-          title: "Page 1",
-          fields: templateFields,
-        },
-      ],
-      settings: {
-        pageNavigation: true,
-        showProgressBar: template === "quiz",
-        collectEmails: template !== "quiz",
-        allowMultipleResponses: template === "survey",
-        makeQuestionsRequiredByDefault: false,
-        sendResponseCopyToParticipants: false,
-        allowResponseEditing: false,
-        requireLogin: false,
-        limitToOneResponse: false,
-      },
-    };
-  });
+const [form, setForm] = useState<FormType>({
+  title: "Nouveau formulaire",
+  description: "",
+  theme: "corporate",
+  pages: [{
+    id: `page-${Date.now()}`,
+    title: "Page 1",
+    order: 1,
+    fields: []
+  }],
+  settings: {
+    collectEmails: false,
+    requireLogin: false,
+    allowMultipleResponses: false,
+    showProgressBar: true,
+    allowResponseEditing: false,
+    sendResponseCopyToParticipants: false,
+    pageNavigation: true,
+    makeQuestionsRequiredByDefault: false,
+    limitToOneResponse: false,
+  },
+  groupId: 0,
+  createdAt: new Date().toISOString(),
+  updatedAt: new Date().toISOString(),
+  userId: user?.id || "",
+  isPublic: false,
+  responses: []
+});
 
   const goToPage = (index: number) => {
     if (index >= 0 && index < form.pages.length) {
@@ -512,9 +409,15 @@ const [form, setForm] = useState<FormType>(() => {
 //         : "https://online-hozy.onrender.com/api/forms";
       const method = isEditMode ? "PUT" : "POST";
 
+      const token = getAuthToken();
+      if (!token) {
+        toast.error("Vous devez être connecté pour sauvegarder le formulaire");
+        return;
+      }
+
       const response = await fetch(url, {
         method,
-        headers: { "Content-Type": "application/json" ,  "Authorization": `Bearer ${Token}`},
+        headers: { "Content-Type": "application/json" ,  "Authorization": `Bearer ${token}`},
         body: JSON.stringify(formToSave),
 
       });
@@ -545,8 +448,13 @@ const [form, setForm] = useState<FormType>(() => {
 
     const fetchForm = async () => {
       try {
+        const token = getAuthToken();
+        if (!token) {
+          throw new Error("Vous devez être connecté pour charger le formulaire");
+        }
+
         const response = await fetch(`${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.GET_FORM.replace(":id", id!)}`,{
-           headers: { "Content-Type": "application/json" ,  "Authorization": `Bearer ${Token}`,},}
+           headers: { "Content-Type": "application/json" ,  "Authorization": `Bearer ${token}`,},}
         );
 
         if (!response.ok) {
@@ -583,8 +491,13 @@ const [form, setForm] = useState<FormType>(() => {
 
     const fetchForm = async () => {
       try {
+        const token = getAuthToken();
+        if (!token) {
+          throw new Error("Vous devez être connecté pour charger le formulaire");
+        }
+
         const response = await fetch(`https://online-hozy.onrender.com/api/forms/${id}`,{
-          headers: { "Content-Type": "application/json", "Authorization": `Bearer ${Token}` },
+          headers: { "Content-Type": "application/json", "Authorization": `Bearer ${token}` },
         });
         if (!response.ok) {
           const data = await response.json().catch(() => null);
@@ -718,7 +631,7 @@ const [form, setForm] = useState<FormType>(() => {
             </>
           )}
 
-          {activeTab === "preview" && <div className="relative"><FormPreview form={form} onSubmit={toast("Formulaire soumis")}/></div>}
+          {activeTab === "preview" && <div className="relative"><FormPreview form={form} onSubmit={() => toast.success("Formulaire soumis")}/></div>}
 
           {activeTab === "settings" && (
             <BuilderSettings 

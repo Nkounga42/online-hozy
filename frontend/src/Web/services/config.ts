@@ -57,5 +57,8 @@ export const getEndpoint = (key: keyof typeof API_CONFIG.ENDPOINTS): string => {
 };
 
 
-export const Token = localStorage.getItem(API_CONFIG.TOKEN_CONFIG.STORAGE_KEYS.AUTH_TOKEN) ||
-              sessionStorage.getItem(API_CONFIG.TOKEN_CONFIG.STORAGE_KEYS.AUTH_TOKEN);
+// Helper function to get auth token dynamically
+export const getAuthToken = (): string | null => {
+  return localStorage.getItem(API_CONFIG.TOKEN_CONFIG.STORAGE_KEYS.AUTH_TOKEN) ||
+         sessionStorage.getItem(API_CONFIG.TOKEN_CONFIG.STORAGE_KEYS.AUTH_TOKEN);
+};

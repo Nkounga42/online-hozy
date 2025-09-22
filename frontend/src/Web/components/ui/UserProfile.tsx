@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
 import { User, LogOut, Settings, ChevronDown } from 'lucide-react';
 import { useUser } from '../../services/userService.tsx';
+import { useNavigate } from 'react-router-dom';
 
 const UserProfile: React.FC = () => {
   const { user, logout } = useUser();
+  const navigate = useNavigate();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   if (!user) {
@@ -21,6 +23,11 @@ const UserProfile: React.FC = () => {
 
   const toggleMenu = () => {
     setIsMenuOpen(!isMenuOpen);
+  };
+
+  const handleNavigateToSettings = () => {
+    navigate('/profile');
+    setIsMenuOpen(false);
   };
 
   return (
@@ -85,10 +92,7 @@ const UserProfile: React.FC = () => {
           
           <div className="p-2">
             <button
-              onClick={() => {
-                // TODO: Implémenter la navigation vers les paramètres
-                setIsMenuOpen(false);
-              }}
+              onClick={handleNavigateToSettings}
               className="w-full flex items-center gap-3 px-3 py-2 text-sm rounded-md hover:bg-base-200 transition-colors duration-200"
             >
               <Settings className="w-4 h-4" />

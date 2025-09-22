@@ -1,14 +1,16 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap');
 @import "tailwindcss";
 @plugin "daisyui";
-@import url('https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap');
 body {
   font-family: inter, arial, sans-serif;
   user-select: none;
+  background: var(--color-base-100);
 }
 
 * {
   outline: none;
   scroll-behavior: smooth;
+  /* zoom: 99%; */
 }
 
 @plugin "daisyui/theme" { 

@@ -9,7 +9,6 @@ interface ThemeSelectorProps {
 
 const ThemeSelector: React.FC<ThemeSelectorProps> = ({ compact = false }) => {
   const [selectedTheme, setSelectedTheme] = useState(themeService.getCurrentTheme());
-  const [isOpen, setIsOpen] = useState(false);
 
   useEffect(() => {
     const handleThemeChange = (event: CustomEvent) => {
@@ -25,7 +24,6 @@ const ThemeSelector: React.FC<ThemeSelectorProps> = ({ compact = false }) => {
   const handleThemeChange = (themeName: string) => {
     themeService.setTheme(themeName);
     setSelectedTheme(themeName);
-    setIsOpen(false);
     
     const themeInfo = themeService.getAvailableThemes().find(t => t.name === themeName);
     toast.success(`Thème "${themeInfo?.label}" appliqué`);

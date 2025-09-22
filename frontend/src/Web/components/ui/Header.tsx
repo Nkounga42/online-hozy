@@ -1,23 +1,24 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowLeft, User } from 'lucide-react';
+import { ArrowLeft } from 'lucide-react';
 import { useUser } from '../../services/userService';
-import authService from '../../services/authService';
 import APP_LOGO from '../../assets/image/hozy-logo.png';
 
-const Header: React.FC = ({ backurl, backtext }: { backurl: string, backtext: string }) => {
+interface HeaderProps {
+  backurl?: string;
+  backtext?: string;
+}
+
+const Header: React.FC<HeaderProps> = ({ backurl, backtext }) => {
   const { user, loading } = useUser();
 
-  const handleLogout = () => {
-    authService.logout();
-  };
 
   
   return (
     <header className="sticky top-0 z-50 backdrop-blur-xl bg-base-100/30 border-b border-base-content/10  p-2 flex justify-between items-center ">
-      <Link to={backurl} className="text-xl font-bold group w-50">
+      <Link to={backurl || "/"} className="text-xl font-bold group w-50">
         <span className={'flex items-center gap-2 group-hover:'  + (backurl === '/' ? 'hidden' : '')}>
-          <img src={APP_LOGO} alt="hozy-logo" className='w-8 h-8' />
+          <img src={APP_LOGO} alt="hozy-logo" className='w-7 h-7' />
           {/* Hozy form */}
         </span>
         {backurl && (
@@ -31,12 +32,12 @@ const Header: React.FC = ({ backurl, backtext }: { backurl: string, backtext: st
         <Link to="/profile" className="flex items-center gap-4">
           {user.photoURL ? (
             <div className="avatar">
-              <div className="w-10 rounded-full">
+              <div className="w-8 rounded-full">
                 <img src={user.photoURL} alt={user.displayName || user.email} />
               </div>
             </div>
           ) : (
-            <div className="w-10 h-10 rounded-full bg-primary text-base-100 flex items-center justify-center">
+            <div className="w-8 h-8 rounded-full bg-primary text-base-100 flex items-center justify-center">
               {loading ? <span className="loading loading-spinner loading-md"></span> : user.displayName?.charAt(0).toUpperCase() || user.email.charAt(0).toUpperCase()}
             </div>
           )}

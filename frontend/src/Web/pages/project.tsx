@@ -2,21 +2,23 @@ import { useEffect, useState } from "react";
 import { X, Search, ArrowLeft, ArrowRight } from "lucide-react";
 import FolderCard from "../components/ui/forldercard";
 import FormCard from "../components/ui/formcard";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
 import { Group, Form } from "../models/DataModels";
 import { CreateProject } from "../components/form-builder/CreateProject";
 import Footer from "../components/ui/Footer";
 import Header from "../components/ui/Header";
-import { API_CONFIG, Token } from '../services/config';
+import { API_CONFIG } from '../services/config';
 import { toast } from "sonner";
 
 export default function Index() {
+  const navigate = useNavigate();
   const [selectedGroup, setSelectedGroup] = useState<Group | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [groups, setGroups] = useState<Group[]>([]);
   const [allForms, setAllForms] = useState<Form[]>([]);
   const [loading, setLoading] = useState(false);
+
 
   const [createProject, setCreateProject] = useState(false);
   const [displayMode, setDisplayMode] = useState<
@@ -28,14 +30,26 @@ export default function Index() {
   const formsPerPage = 30;  
 
 
+  // Fonction pour obtenir le token d'authentification
+  const getAuthToken = (): string | null => {
+    return localStorage.getItem(API_CONFIG.TOKEN_CONFIG.STORAGE_KEYS.AUTH_TOKEN) || sessionStorage.getItem(API_CONFIG.TOKEN_CONFIG.STORAGE_KEYS.AUTH_TOKEN);
+  };
+
   // DELETE form
   const handleDeleteForm = async (formId: number) => {
     try {
+      const token = getAuthToken();
+      if (!token) {
+        toast.error("Vous devez être connecté pour effectuer cette action");
+        navigate('/login');
+        return;
+      }
+
       await fetch(`${API_CONFIG.BASE_URL}/api/forms/${formId}`, {
         method: "DELETE",
         headers: { 
             "Content-Type": "application/json",
-            "Authorization": `Bearer ${Token}` 
+            "Authorization": `Bearer ${token}` 
           },
       });
       setAllForms((prev) => prev.filter((f) => f.id !== formId));
@@ -53,13 +67,20 @@ export default function Index() {
   // RENAME form
   const handleRenameForm = async (formId: number, newTitle: string) => {
     try {
+      const token = getAuthToken();
+      if (!token) {
+        toast.error("Vous devez être connecté pour effectuer cette action");
+        navigate('/login');
+        return;
+      }
+
       const res = await fetch(
         `${API_CONFIG.BASE_URL}/api/forms/${formId}/rename`,
         {
           method: "PUT",
           headers: { 
             "Content-Type": "application/json",
-            "Authorization": `Bearer ${Token}` 
+            "Authorization": `Bearer ${token}` 
           },
           body: JSON.stringify({ title: newTitle }),
         }
@@ -84,13 +105,20 @@ export default function Index() {
   // DUPLICATE form
   const handleDuplicateForm = async (formId: number) => {
     try {
+      const token = getAuthToken();
+      if (!token) {
+        toast.error("Vous devez être connecté pour effectuer cette action");
+        navigate('/login');
+        return;
+      }
+
       const res = await fetch(
         `${API_CONFIG.BASE_URL}/api/forms/${formId}/duplicate`,
         {
           method: "POST",
           headers: { 
             "Content-Type": "application/json",
-            "Authorization": `Bearer ${Token}` 
+            "Authorization": `Bearer ${token}` 
           },
         }
       );
@@ -108,12 +136,19 @@ export default function Index() {
 
   // EXPORT form (JSON)
 const handleExportForm = async (formId: number) => {
+  const token = getAuthToken();
+  if (!token) {
+    toast.error("Vous devez être connecté pour effectuer cette action");
+    navigate('/login');
+    return;
+  }
+
   const res = await fetch(
     `${API_CONFIG.BASE_URL}/api/forms/${formId}/export`,
     {
       headers: { 
         "Content-Type": "application/json",
-        "Authorization": `Bearer ${Token}` 
+        "Authorization": `Bearer ${token}` 
       },
     }
   );
@@ -149,11 +184,16 @@ const handleExportForm = async (formId: number) => {
 const handleShareForm = async (formId: number) => {
   try { 
 
-    if (!Token) throw new Error("Utilisateur non connecté");
+    const token = getAuthToken();
+    if (!token) {
+      toast.error("Vous devez être connecté pour effectuer cette action");
+      navigate('/login');
+      return;
+    }
 
     const res = await fetch(`${API_CONFIG.BASE_URL}/api/forms/${formId}/share`, {
       headers: {
-        "Authorization": `Bearer ${Token}`,
+        "Authorization": `Bearer ${token}`,
       }
     });
 
@@ -198,8 +238,19 @@ const handleShareForm = async (formId: number) => {
   // DELETE group
   const handleDeleteGroup = async (groupId: number) => {
     try {
+      const token = getAuthToken();
+      if (!token) {
+        toast.error("Vous devez être connecté pour effectuer cette action");
+        navigate('/login');
+        return;
+      }
+
       await fetch(`${API_CONFIG.BASE_URL}/api/groups/${groupId}`, {
         method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`
+        },
       });
       setGroups((prev) => prev.filter((g) => g.id !== groupId));
       setAllForms((prev) => prev.filter((f) => f.groupId !== groupId));
@@ -211,11 +262,18 @@ const handleShareForm = async (formId: number) => {
   // Renommer un groupe
   const handleRenameGroup = async (groupId: number, newTitle: string) => {
     try {
+      const token = getAuthToken();
+      if (!token) {
+        toast.error("Vous devez être connecté pour effectuer cette action");
+        navigate('/login');
+        return;
+      }
+
       const res = await fetch(`${API_CONFIG.BASE_URL}/api/groups/${groupId}`, {
         method: "PUT",
         headers: { 
           "Content-Type": "application/json",
-          "Authorization": `Bearer ${Token}`
+          "Authorization": `Bearer ${token}`
         },
         body: JSON.stringify({ title: newTitle }),
       });
@@ -235,11 +293,18 @@ const handleShareForm = async (formId: number) => {
     if (!group) return;
 
     try {
+      const token = getAuthToken();
+      if (!token) {
+        toast.error("Vous devez être connecté pour effectuer cette action");
+        navigate('/login');
+        return;
+      }
+
       const res = await fetch(`${API_CONFIG.BASE_URL}/api/groups`, {
         method: "POST",
         headers: { 
           "Content-Type": "application/json", 
-          "Authorization": `Bearer ${Token}` 
+          "Authorization": `Bearer ${token}` 
         },
         body: JSON.stringify({
           title: group.title + " (Copie)",
@@ -256,8 +321,21 @@ const handleShareForm = async (formId: number) => {
 
   // EXPORT group
   const handleExportGroup = async (groupId: number) => {
+    const token = getAuthToken();
+    if (!token) {
+      toast.error("Vous devez être connecté pour effectuer cette action");
+      navigate('/login');
+      return;
+    }
+
     const res = await fetch(
-      `${API_CONFIG.BASE_URL}/api/groups/${groupId}/export`
+      `${API_CONFIG.BASE_URL}/api/groups/${groupId}/export`,
+      {
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`
+        },
+      }
     );
     const blob = await res.blob();
     const url = window.URL.createObjectURL(blob);
@@ -270,12 +348,25 @@ const handleShareForm = async (formId: number) => {
 
   // SHARE group
   const handleShareGroup = async (groupId: number) => {
+    const token = getAuthToken();
+    if (!token) {
+      toast.error("Vous devez être connecté pour effectuer cette action");
+      navigate('/login');
+      return;
+    }
+
     const res = await fetch(
-      `${API_CONFIG.BASE_URL}/api/groups/${groupId}/share`
+      `${API_CONFIG.BASE_URL}/api/groups/${groupId}/share`,
+      {
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`
+        },
+      }
     );
     const data = await res.json();
     navigator.clipboard.writeText(data.shareUrl);
-    alert("Lien copié : " + data.shareUrl);
+    toast.success("Lien copié : " + data.shareUrl);
   };
 
   useEffect(() => { 
@@ -283,10 +374,11 @@ const handleShareForm = async (formId: number) => {
       try {
         setLoading(true);
         
-        if (!Token) 
-          if (!Token) {
-            toast.error("Token manquant, utilisateur non connecté");
-            throw new Error("Utilisateur non connecté");
+        const token = getAuthToken();
+        if (!token) {
+          toast.error("Vous devez être connecté pour voir vos formulaires");
+          navigate('/login');
+          return;
         }
 
         const res = await fetch(
@@ -294,7 +386,7 @@ const handleShareForm = async (formId: number) => {
           {
             headers: {
               "Content-Type": "application/json",
-              "Authorization": `Bearer ${Token}`,
+              "Authorization": `Bearer ${token}`,
             },
           }
         );
@@ -481,6 +573,20 @@ const handleShareForm = async (formId: number) => {
   //   navigator.clipboard.writeText(shareUrl);
   //   alert("Lien copié : " + shareUrl);
   // };
+
+  // Afficher un loader pendant la vérification de l'authentification
+  // if (userLoading) {
+  //   return (
+  //     <div className="flex-1 flex justify-center items-center min-h-screen">
+  //       <div className="flex gap-2 items-center">
+  //         <span className="loading loading-spinner text-primary"></span>
+  //         Vérification de l'authentification...
+  //       </div>
+  //     </div>
+  //   );
+  // }
+
+  // Le composant est déjà protégé par ProtectedRoute, pas besoin de vérification supplémentaire
 
   return (
     <>

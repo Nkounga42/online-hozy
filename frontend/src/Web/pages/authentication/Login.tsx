@@ -3,10 +3,9 @@ import { useNavigate, useLocation } from "react-router-dom";
 import Footer from "../../components/ui/Footer";
 import { useUser } from "../../services/userService"; // <-- importer le contexte
 import { toast } from "sonner";
-import authService from "../../services/authService";
 
 const Login = () => {
-  const { login } = useUser(); 
+  const { login, user, loading: userLoading } = useUser(); 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [rememberMe, setRememberMe] = useState(false);
@@ -18,11 +17,11 @@ const Login = () => {
 
   // Rediriger si déjà connecté
   useEffect(() => {
-    if (authService.isAuthenticated()) {
+    if (!userLoading && user) {
       const from = (location.state as { from?: { pathname: string } })?.from?.pathname || "/";
       navigate(from, { replace: true });
     }
-  }, [navigate, location]);
+  }, [user, userLoading, navigate, location]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -31,10 +30,7 @@ const Login = () => {
     setLoading(true);
 
     try {
-      // Utiliser le service d'authentification directement
-      await authService.login(email, password);
-      
-      // Aussi mettre à jour le contexte utilisateur
+      // Utiliser uniquement le service utilisateur
       await login(email, password, rememberMe);
 
       setSuccess("Connexion réussie 🎉");

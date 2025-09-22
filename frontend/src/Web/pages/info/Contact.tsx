@@ -19,7 +19,7 @@ const Contact = () => {
   };
 
   return (
-    <main className="max-w-6xl mx-auto p-6 flex gap-10">
+    <main className="max-w-4xl mx-auto p-6 flex gap-10">
       {/* CONTENU PRINCIPAL */}
       <div className="w-3/5 space-y-5">
         <header className="mb-10">
@@ -34,7 +34,7 @@ const Contact = () => {
         {!submitted ? (
           <form
             onSubmit={handleSubmit}
-            className="space-y-6 rounded-xl shadow"
+            className="space-y-6 rounded-xl "
           >
             <div>
               <label className="block text-sm font-medium mb-1">Nom</label>
@@ -106,8 +106,8 @@ const Contact = () => {
             </ul>
           </nav>
 
-          <div className="bg-base-200  rounded-xl shadow">
-            <div className="bg-base-200 rounded-xl shadow p-6  space-y-4">
+          <div className="">
+            <div className="bg-base-200/30 rounded-xl shadow p-3  space-y-4">
               <h2 className="text-lg font-semibold mb-3">
                 Informations de contact
               </h2>
