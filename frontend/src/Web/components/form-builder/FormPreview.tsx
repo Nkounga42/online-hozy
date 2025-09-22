@@ -297,10 +297,7 @@ export function FormPreview({
                 <button type="button" className="btn btn-outline" onClick={() => setCurrentPageIndex(i => i - 1)}>
                   Précédent
                 </button>
-              )}
-
-
-
+              )} 
               {currentPageIndex < form.pages.length - 1 ? (
                 <button type="button" className="btn btn-primary" onClick={() => setCurrentPageIndex(i => i + 1)}>
                   Suivant

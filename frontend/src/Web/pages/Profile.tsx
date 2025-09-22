@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useUser } from '../services/userService';
 import { toast } from 'sonner';
+import { API_CONFIG, getAuthToken } from '../services/config';
 import { 
   User, 
   Settings, 
@@ -15,7 +16,8 @@ import {
   Upload,
   FileText,
   Users,
-  LogOut
+  LogOut,
+  RefreshCw
 } from 'lucide-react';
 import themeService from '../services/themeService';
 import ThemeSelector from '../components/ui/ThemeSelector';
@@ -53,6 +55,7 @@ const Profile = () => {
   const { user, updateUserProfile, changePassword, deleteAccount, updateUserPreferences, logout } = useUser();
   const [activeTab, setActiveTab] = useState<'profile' | 'settings' | 'security'>('profile');
   const [loading, setLoading] = useState(false);
+  const [statsLoading, setStatsLoading] = useState(true);
   const [showCurrentPassword, setShowCurrentPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -100,22 +103,45 @@ const Profile = () => {
   }, [user]);
 
   const loadUserStats = async () => {
+    setStatsLoading(true);
     try {
-      // Simuler des données de statistiques (à remplacer par un vrai appel API)
-      const mockStats: UserStats = {
-        totalForms: 12,
-        totalResponses: 248,
-        totalViews: 1456,
-        formsThisMonth: 3,
-        responsesThisMonth: 67,
-        averageResponseRate: 85.2,
-        mostPopularForm: "Enquête de satisfaction client",
-        joinDate: "Mars 2024"
-      };
-      
-      setStats(mockStats);
+      const token = getAuthToken();
+      if (!token) {
+        console.warn('Aucun token d\'authentification trouvé');
+        return;
+      }
+
+      const response = await fetch(`${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.GET_USER_STATS}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error(`Erreur HTTP ${response.status}`);
+      }
+
+      const statsData = await response.json();
+      setStats(statsData);
     } catch (error) {
       console.error('Erreur lors du chargement des statistiques:', error);
+      toast.error('Impossible de charger les statistiques');
+      
+      // Garder des valeurs par défaut en cas d'erreur
+      setStats({
+        totalForms: 0,
+        totalResponses: 0,
+        totalViews: 0,
+        formsThisMonth: 0,
+        responsesThisMonth: 0,
+        averageResponseRate: 0,
+        mostPopularForm: 'Aucun',
+        joinDate: 'Inconnu'
+      });
+    } finally {
+      setStatsLoading(false);
     }
   };
 
@@ -287,32 +313,49 @@ const Profile = () => {
           {activeTab === 'profile' && (
             <div className="space-y-8">
               {/* Statistiques */}
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                <div className="stat border-none bg-base-300 rounded-lg p-4">
-                  <div className="stat-figure text-primary">
-                    <FileText className="w-8 h-8" />
+              {statsLoading ? (
+                <div className="flex justify-center items-center py-12">
+                  <span className="loading loading-spinner loading-lg text-primary"></span>
+                  <span className="ml-3 text-lg">Chargement des statistiques...</span>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  <div className="stat border-none bg-base-300 rounded-lg p-4">
+                    <div className="stat-figure text-primary">
+                      <FileText className="w-8 h-8" />
+                    </div>
+                    <div className="stat-title">Formulaires créés</div>
+                    <div className="stat-value text-primary">{stats.totalForms}</div>
+                    <div className="stat-desc">+{stats.formsThisMonth} ce mois</div>
                   </div>
-                  <div className="stat-title">Formulaires créés</div>
-                  <div className="stat-value text-primary">{stats.totalForms}</div>
-                  <div className="stat-desc">+{stats.formsThisMonth} ce mois</div>
-                </div>
 
-                <div className="stat border-none bg-base-300 rounded-lg p-4">
-                  <div className="stat-figure text-secondary">
-                    <Users className="w-8 h-8" />
+                  <div className="stat border-none bg-base-300 rounded-lg p-4">
+                    <div className="stat-figure text-secondary">
+                      <Users className="w-8 h-8" />
+                    </div>
+                    <div className="stat-title">Réponses reçues</div>
+                    <div className="stat-value text-secondary">{stats.totalResponses}</div>
+                    <div className="stat-desc">+{stats.responsesThisMonth} ce mois</div>
                   </div>
-                  <div className="stat-title">Réponses reçues</div>
-                  <div className="stat-value text-secondary">{stats.totalResponses}</div>
-                  <div className="stat-desc">+{stats.responsesThisMonth} ce mois</div>
-                </div>
 
-                <div className="stat border-none bg-base-300 rounded-lg p-4">
-                  <div className="stat-title">Vues totales</div>
-                  <div className="stat-value text-accent">{stats.totalViews.toLocaleString()}</div>
-                  <div className="stat-desc">Taux de réponse: {stats.averageResponseRate}%</div>
+                  <div className="stat border-none bg-base-300 rounded-lg p-4">
+                    <div className="stat-title">Vues totales</div>
+                    <div className="stat-value text-accent">{stats.totalViews.toLocaleString()}</div>
+                    <div className="stat-desc">Taux de réponse: {stats.averageResponseRate}%</div>
+                  </div>
                 </div>
+              )}
 
-                 
+              {/* Bouton d'actualisation */}
+              <div className="flex justify-center">
+                <button 
+                  onClick={loadUserStats}
+                  className={`btn btn-outline btn-sm ${statsLoading ? 'loading' : ''}`}
+                  disabled={statsLoading}
+                >
+                  {!statsLoading && <RefreshCw className="w-4 h-4 mr-2" />}
+                  Actualiser les statistiques
+                </button>
               </div>
 
               {/* Formulaire le plus populaire

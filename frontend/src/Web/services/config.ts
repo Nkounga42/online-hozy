@@ -20,6 +20,7 @@ export const API_CONFIG = {
 
     GET_FORMS: '/api/forms', 
     GET_FORM: '/api/forms/:id',
+    GET_USER_STATS: '/api/forms/stats/user',
     // SUBMIT_FORM: '/api/forms/submit',
   },
   

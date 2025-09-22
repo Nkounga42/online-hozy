@@ -234,6 +234,84 @@ router.post("/:id/submit", async (req, res) => {
   }
 });
 
+// GET user statistics
+router.get("/stats/user", authMiddleware, async (req, res) => {
+  try {
+    const userId = req.user.id;
+    
+    // Récupérer tous les formulaires de l'utilisateur
+    const userForms = await Form.find({ createById: userId });
+    
+    // Calculer les statistiques
+    const totalForms = userForms.length;
+    let totalResponses = 0;
+    let totalViews = 0;
+    let mostPopularForm = "";
+    let maxResponses = 0;
+    
+    // Date du début du mois actuel
+    const startOfMonth = new Date();
+    startOfMonth.setDate(1);
+    startOfMonth.setHours(0, 0, 0, 0);
+    
+    let formsThisMonth = 0;
+    let responsesThisMonth = 0;
+    
+    userForms.forEach(form => {
+      // Compter les réponses
+      const formResponses = form.submissions ? form.submissions.length : 0;
+      totalResponses += formResponses;
+      
+      // Compter les vues
+      const formViews = form.views ? form.views.length : 0;
+      totalViews += formViews;
+      
+      // Trouver le formulaire le plus populaire
+      if (formResponses > maxResponses) {
+        maxResponses = formResponses;
+        mostPopularForm = form.title;
+      }
+      
+      // Compter les formulaires créés ce mois
+      if (form.createdAt && new Date(form.createdAt) >= startOfMonth) {
+        formsThisMonth++;
+      }
+      
+      // Compter les réponses de ce mois
+      if (form.submissions) {
+        form.submissions.forEach(submission => {
+          if (submission.timestamp && new Date(submission.timestamp) >= startOfMonth) {
+            responsesThisMonth++;
+          }
+        });
+      }
+    });
+    
+    // Calculer le taux de réponse moyen
+    const averageResponseRate = totalViews > 0 ? ((totalResponses / totalViews) * 100) : 0;
+    
+    // Date d'inscription (premier formulaire créé)
+    const joinDate = userForms.length > 0 
+      ? new Date(Math.min(...userForms.map(f => new Date(f.createdAt || Date.now()).getTime())))
+      : new Date();
+    
+    const stats = {
+      totalForms,
+      totalResponses,
+      totalViews,
+      formsThisMonth,
+      responsesThisMonth,
+      averageResponseRate: Math.round(averageResponseRate * 100) / 100,
+      mostPopularForm: mostPopularForm || "Aucun",
+      joinDate: joinDate.toLocaleDateString('fr-FR', { year: 'numeric', month: 'long' })
+    };
+    
+    res.json(stats);
+  } catch (err) {
+    res.status(500).json({ message: "Erreur serveur", error: err.message });
+  }
+});
+
 // DELETE form
 router.delete("/:id", authMiddleware, async (req, res) => {
   try {
