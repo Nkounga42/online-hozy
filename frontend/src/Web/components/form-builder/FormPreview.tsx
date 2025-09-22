@@ -1,4 +1,4 @@
-import React, { useState } from "react"; 
+import React, { useState } from "react";
 import type { Form, FormField } from "../../shared/form-types"; // Assure-toi d'importer tes types correctement
 import { FileText, Image, Video, Music, File, X } from "lucide-react";
 
@@ -6,14 +6,14 @@ import { FileText, Image, Video, Music, File, X } from "lucide-react";
 const FilePreview = ({ file }: { file: File }) => {
   const fileType = file.type;
   const fileName = file.name.toLowerCase();
-  
+
   // Images
   if (fileType.startsWith('image/')) {
     const imageUrl = URL.createObjectURL(file);
     return (
       <div className="relative w-full h-20 bg-base-200 rounded overflow-hidden">
-        <img 
-          src={imageUrl} 
+        <img
+          src={imageUrl}
           alt={file.name}
           className="w-full h-full object-cover"
           onLoad={() => URL.revokeObjectURL(imageUrl)}
@@ -24,14 +24,14 @@ const FilePreview = ({ file }: { file: File }) => {
       </div>
     );
   }
-  
+
   // Vidéos
   if (fileType.startsWith('video/')) {
     const videoUrl = URL.createObjectURL(file);
     return (
       <div className="relative w-full h-20 bg-base-200 rounded overflow-hidden">
-        <video 
-          src={videoUrl} 
+        <video
+          src={videoUrl}
           className="w-full h-full object-cover"
           onLoadedData={() => URL.revokeObjectURL(videoUrl)}
         />
@@ -41,7 +41,7 @@ const FilePreview = ({ file }: { file: File }) => {
       </div>
     );
   }
-  
+
   // Audio
   if (fileType.startsWith('audio/')) {
     return (
@@ -50,7 +50,7 @@ const FilePreview = ({ file }: { file: File }) => {
       </div>
     );
   }
-  
+
   // PDF
   if (fileType === 'application/pdf' || fileName.endsWith('.pdf')) {
     return (
@@ -59,7 +59,7 @@ const FilePreview = ({ file }: { file: File }) => {
       </div>
     );
   }
-  
+
   // Documents texte
   if (fileType.startsWith('text/') || fileName.endsWith('.txt') || fileName.endsWith('.doc') || fileName.endsWith('.docx')) {
     return (
@@ -68,7 +68,7 @@ const FilePreview = ({ file }: { file: File }) => {
       </div>
     );
   }
-  
+
   // JSON
   if (fileType === 'application/json' || fileName.endsWith('.json')) {
     return (
@@ -77,7 +77,7 @@ const FilePreview = ({ file }: { file: File }) => {
       </div>
     );
   }
-  
+
   // Fichier générique
   return (
     <div className="w-full h-20 bg-base-200 rounded flex items-center justify-center">
@@ -104,10 +104,10 @@ export function FormPreview({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onSubmit(responses);  
+    onSubmit(responses);
   };
 
-  
+
   const renderField = (field: FormField) => {
     const fieldId = field.id;
     const value = responses[fieldId];
@@ -204,17 +204,17 @@ export function FormPreview({
       case "file": {
         const files = value as FileList | null;
         const fileArray = files ? Array.from(files) : [];
-        
+
         const removeFile = (indexToRemove: number) => {
           const newFileArray = fileArray.filter((_, index) => index !== indexToRemove);
-          
+
           // Créer un nouveau FileList à partir du tableau filtré
           const dataTransfer = new DataTransfer();
           newFileArray.forEach(file => dataTransfer.items.add(file));
-          
+
           updateResponse(fieldId, dataTransfer.files);
         };
-        
+
         return (
           <div className="space-y-3">
             <input
@@ -225,7 +225,7 @@ export function FormPreview({
               multiple
               accept="image/*,video/*,audio/*,.pdf,.doc,.docx,.txt,.json"
             />
-            
+
             {/* Aperçu des fichiers sélectionnés */}
             {fileArray.length > 0 && (
               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 mt-4">
@@ -283,33 +283,36 @@ export function FormPreview({
           ))}
 
 
-          {activeNavigation && (
-            <div className="flex justify-between items-center pt-4">
-              <span className="text-sm text-base-content/60">
-                Page {currentPageIndex + 1} sur {form.pages.length}
-              </span>
-              <div className="flex gap-2">
-                {currentPageIndex > 0 && (
-                  <button type="button" className="btn btn-outline" onClick={() => setCurrentPageIndex(i => i - 1)}>
-                    Précédent
-                  </button>
-                )}
+          <div className="flex justify-between items-center pt-4">
+            <div>
 
-
-                
-                {currentPageIndex < form.pages.length - 1 ? (
-                  <button type="button" className="btn btn-primary" onClick={() => setCurrentPageIndex(i => i + 1)}>
-                    Suivant
-                  </button>
-                ) : (
-                  <button type="submit" className="btn btn-success">
-                    Soumettre
-                  </button>
-                )}
-              </div>
-             
+              {activeNavigation && (
+                <span className="text-sm text-base-content/60">
+                  Page {currentPageIndex + 1} sur {form.pages.length}
+                </span>
+              )}
             </div>
-          )}
+            <div className="flex gap-2">
+              {currentPageIndex > 0 && (
+                <button type="button" className="btn btn-outline" onClick={() => setCurrentPageIndex(i => i - 1)}>
+                  Précédent
+                </button>
+              )}
+
+
+
+              {currentPageIndex < form.pages.length - 1 ? (
+                <button type="button" className="btn btn-primary" onClick={() => setCurrentPageIndex(i => i + 1)}>
+                  Suivant
+                </button>
+              ) : (
+                <button type="submit" className="btn btn-success">
+                  Soumettre
+                </button>
+              )}
+            </div>
+
+          </div>
           <p className="text-sm text-base-content/60">
             En soumettant ce formulaire, vous acceptez nos <a href="/terms" className="link">conditions d'utilisation</a>. <br />
             N'envoyez jamais de mots de passe via Forms Builder.

@@ -94,7 +94,7 @@ const [form, setForm] = useState<FormType>({
     collectEmails: false,
     requireLogin: false,
     allowMultipleResponses: false,
-    showProgressBar: true,
+    showProgressBar: false,
     allowResponseEditing: false,
     sendResponseCopyToParticipants: false,
     pageNavigation: true,
