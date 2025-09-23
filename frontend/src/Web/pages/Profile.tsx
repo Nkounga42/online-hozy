@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useUser } from '../services/userService';
 import { toast } from 'sonner';
 import { API_CONFIG, getAuthToken } from '../services/config';
@@ -16,7 +16,8 @@ import {
   FileText,
   Users,
   LogOut,
-  RefreshCw
+  RefreshCw,
+  Check
 } from 'lucide-react';
 import themeService from '../services/themeService';
 import ThemeSelector from '../components/ui/ThemeSelector';
@@ -51,9 +52,20 @@ interface UserStats {
   joinDate: string;
 }
 
+interface FormResponse {
+  id: string;
+  formId: string;
+  formTitle: string;
+  respondentName?: string;
+  respondentEmail?: string;
+  submittedAt: string;
+  responses: Record<string, string | number | boolean | string[]>;
+  isRead: boolean;
+}
+
 const Profile = () => {
   const { user, updateUserProfile, changePassword, deleteAccount, updateUserPreferences, logout } = useUser();
-  const [activeTab, setActiveTab] = useState<'profile' | 'settings' | 'security'>('profile');
+  const [activeTab, setActiveTab] = useState<'profile' | 'settings' | 'security' | 'notifications'>('profile');
   const [loading, setLoading] = useState(false);
   const [statsLoading, setStatsLoading] = useState(true);
   const [showCurrentPassword, setShowCurrentPassword] = useState(false);
@@ -89,6 +101,9 @@ const Profile = () => {
     joinDate: ''
   });
 
+  const [notifications, setNotifications] = useState<FormResponse[]>([]);
+  const [notificationsLoading, setNotificationsLoading] = useState(false);
+
 
   useEffect(() => {
     if (user) {
@@ -100,8 +115,22 @@ const Profile = () => {
 
       // Charger les statistiques utilisateur
       loadUserStats();
+      
+      // Charger les notifications initiales
+      loadNotifications(false);
     }
   }, [user]);
+
+  // Vérification périodique des nouvelles notifications
+  useEffect(() => {
+    if (!user) return;
+
+    const interval = setInterval(() => {
+      loadNotifications(true); // Avec toast pour les nouvelles notifications
+    }, 30000); // Vérifier toutes les 30 secondes
+
+    return () => clearInterval(interval);
+  }, [user, notifications]);
 
   const loadUserStats = async () => {
     setStatsLoading(true);
@@ -259,6 +288,82 @@ const Profile = () => {
     }
   };
 
+  const loadNotifications = async (showToast = false) => {
+    setNotificationsLoading(true);
+    try {
+      const token = getAuthToken();
+      if (!token) {
+        console.warn('Aucun token d\'authentification trouvé');
+        return;
+      }
+
+      const response = await fetch(`${API_CONFIG.BASE_URL}/api/forms/notifications`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error(`Erreur HTTP ${response.status}`);
+      }
+
+      const notificationsData = await response.json();
+      
+      // Vérifier s'il y a de nouvelles notifications
+      if (showToast && notifications.length > 0) {
+        const newNotifications = notificationsData.filter(newNotif => 
+          !notifications.some(existingNotif => existingNotif.id === newNotif.id)
+        );
+        
+        if (newNotifications.length > 0) {
+          newNotifications.forEach(notification => {
+            toast.success(`Nouvelle réponse reçue pour "${notification.formTitle}"`, {
+              duration: 5000,
+              action: {
+                label: 'Voir',
+                onClick: () => setActiveTab('notifications')
+              }
+            });
+          });
+        }
+      }
+      
+      setNotifications(notificationsData);
+    } catch (error) {
+      console.error('Erreur lors du chargement des notifications:', error);
+      if (showToast) {
+        toast.error('Impossible de charger les notifications');
+      }
+    } finally {
+      setNotificationsLoading(false);
+    }
+  };
+
+  const markAsRead = async (notificationId: string) => {
+    try {
+      const token = getAuthToken();
+      if (!token) return;
+
+      await fetch(`${API_CONFIG.BASE_URL}/api/forms/notifications/${notificationId}/read`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      setNotifications(prev => 
+        prev.map(notif => 
+          notif.id === notificationId ? { ...notif, isRead: true } : notif
+        )
+      );
+    } catch (error) {
+      console.error('Erreur lors du marquage comme lu:', error);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-base-200">
       <Header backurl="/" backtext="Retour" />
@@ -323,6 +428,23 @@ const Profile = () => {
             >
               <Shield className="w-4 h-4 mr-2" />
               Sécurité
+            </button>
+            <button
+              className={`tab ${activeTab === 'notifications' ? 'tab-active border-b border-primary text-primary' : ''}`}
+              onClick={() => {
+                setActiveTab('notifications');
+                if (notifications.length === 0) {
+                  loadNotifications();
+                }
+              }}
+            >
+              <Bell className="w-4 h-4 mr-2" />
+              Notifications
+              {notifications.filter(n => !n.isRead).length > 0 && (
+                <span className="badge badge-primary badge-sm ml-2">
+                  {notifications.filter(n => !n.isRead).length}
+                </span>
+              )}
             </button>
           </div>
             <div className=" ">
@@ -671,6 +793,96 @@ const Profile = () => {
                       </button>
                     </div>
                   </div>
+                </div>
+              )}
+
+              {/* Notifications Tab */}
+              {activeTab === 'notifications' && (
+                <div className="space-y-6">
+                  <div className="flex items-center justify-between">
+                    <h2 className="text-2xl font-bold">Notifications</h2>
+                    <button
+                      onClick={() => loadNotifications(false)}
+                      className={`btn btn-outline btn-sm ${notificationsLoading ? 'loading' : ''}`}
+                      disabled={notificationsLoading}
+                    >
+                      {!notificationsLoading && <RefreshCw className="w-4 h-4 mr-2" />}
+                      Actualiser
+                    </button>
+                  </div>
+
+                  {notificationsLoading ? (
+                    <div className="flex justify-center items-center py-12">
+                      <span className="loading loading-spinner loading-lg text-primary"></span>
+                      <span className="ml-3 text-lg">Chargement des notifications...</span>
+                    </div>
+                  ) : notifications.length === 0 ? (
+                    <div className="text-center py-12">
+                      <Bell className="w-16 h-16 mx-auto text-base-content/30 mb-4" />
+                      <h3 className="text-lg font-medium text-base-content/70 mb-2">Aucune notification</h3>
+                      <p className="text-base-content/50">Vous n'avez reçu aucune réponse à vos formulaires pour le moment.</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                      {notifications.map((notification) => (
+                        <div
+                          key={notification.id}
+                          className={`border rounded-lg p-4 transition-all hover:shadow-md ${
+                            notification.isRead 
+                              ? 'bg-base-100 border-base-300' 
+                              : 'bg-primary/5 border-primary/20'
+                          }`}
+                        >
+                          <div className="flex items-start justify-between">
+                            <div className="flex-1">
+                              <div className="flex items-center gap-2 mb-2">
+                                <h3 className="font-semibold text-lg">{notification.formTitle}</h3>
+                                {!notification.isRead && (
+                                  <span className="badge badge-primary badge-sm">Nouveau</span>
+                                )}
+                              </div>
+                              
+                              <div className="text-sm text-base-content/70 mb-3">
+                                <div className="flex items-center gap-4">
+                                  {notification.respondentName && (
+                                    <span>👤 {notification.respondentName}</span>
+                                  )}
+                                  {notification.respondentEmail && (
+                                    <span>📧 {notification.respondentEmail}</span>
+                                  )}
+                                  <span>🕒 {new Date(notification.submittedAt).toLocaleString('fr-FR')}</span>
+                                </div>
+                              </div>
+
+                              <div className="bg-base-200 rounded-lg p-3">
+                                <h4 className="font-medium mb-2">Réponses :</h4>
+                                <div className="space-y-1">
+                                  {Object.entries(notification.responses).map(([key, value]) => (
+                                    <div key={key} className="text-sm">
+                                      <span className="font-medium capitalize">{key}:</span>{' '}
+                                      <span className="text-base-content/80">
+                                        {Array.isArray(value) ? value.join(', ') : String(value)}
+                                      </span>
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            </div>
+
+                            {!notification.isRead && (
+                              <button
+                                onClick={() => markAsRead(notification.id)}
+                                className="btn btn-ghost btn-sm ml-4"
+                                title="Marquer comme lu"
+                              >
+                                <Check className="w-4 h-4" />
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               )}
 

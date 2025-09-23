@@ -312,6 +312,78 @@ router.get("/stats/user", authMiddleware, async (req, res) => {
   }
 });
 
+// GET notifications (recent responses)
+router.get("/notifications", authMiddleware, async (req, res) => {
+  try {
+    const userId = req.user.id;
+    
+    // Récupérer tous les formulaires de l'utilisateur avec leurs soumissions
+    const userForms = await Form.find({ createById: userId });
+    
+    const notifications = [];
+    
+    userForms.forEach(form => {
+      if (form.submissions && form.submissions.length > 0) {
+        form.submissions.forEach(submission => {
+          notifications.push({
+            id: submission._id || `${form.id}-${submission.timestamp}`,
+            formId: form.id,
+            formTitle: form.title,
+            respondentName: submission.responses?.name || submission.responses?.nom || 'Anonyme',
+            respondentEmail: submission.responses?.email || null,
+            submittedAt: submission.timestamp || new Date().toISOString(),
+            responses: submission.responses || {},
+            isRead: submission.isRead || false
+          });
+        });
+      }
+    });
+    
+    // Trier par date de soumission (plus récent en premier)
+    notifications.sort((a, b) => new Date(b.submittedAt) - new Date(a.submittedAt));
+    
+    res.json(notifications);
+  } catch (err) {
+    res.status(500).json({ message: "Erreur serveur", error: err.message });
+  }
+});
+
+// PUT mark notification as read
+router.put("/notifications/:id/read", authMiddleware, async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const notificationId = req.params.id;
+    
+    // Trouver le formulaire et la soumission correspondante
+    const userForms = await Form.find({ createById: userId });
+    
+    let updated = false;
+    for (const form of userForms) {
+      if (form.submissions) {
+        const submission = form.submissions.find(sub => 
+          sub._id?.toString() === notificationId || 
+          `${form.id}-${sub.timestamp}` === notificationId
+        );
+        
+        if (submission) {
+          submission.isRead = true;
+          await form.save();
+          updated = true;
+          break;
+        }
+      }
+    }
+    
+    if (updated) {
+      res.json({ message: "Notification marquée comme lue" });
+    } else {
+      res.status(404).json({ message: "Notification non trouvée" });
+    }
+  } catch (err) {
+    res.status(500).json({ message: "Erreur serveur", error: err.message });
+  }
+});
+
 // DELETE form
 router.delete("/:id", authMiddleware, async (req, res) => {
   try {
